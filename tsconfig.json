@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "module": "esnext",
+    "target": "es5",
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "strict": true,
+    "allowJs": true,
+    "checkJs": true,
+    "skipLibCheck": true,
+    "lib": ["dom", "es7"],
+    "noEmitHelpers": true,
+    "importHelpers": true,
+    "noEmit": true
+  },
+  "files": [
+    "index.js"
+  ]
+}
