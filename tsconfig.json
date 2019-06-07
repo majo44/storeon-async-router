@@ -11,7 +11,7 @@
     "lib": ["dom", "es7"],
     "noEmitHelpers": true,
     "importHelpers": true,
-    "noEmit": true
+    "noEmit": true,
   },
   "files": [
     "index.js"

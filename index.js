@@ -14,8 +14,6 @@
  *
  * @typedef {{
  *      handles: Array.<{id:number, route: string}>,
- *      handleId: number,
- *      navId: number,
  *      current?: NavigationState
  *      next?: Navigation
  * }} RoutingState routing state
@@ -33,6 +31,18 @@
  */
 const routes = {};
 
+/**
+ * Next handle id.
+ * @type {number}
+ */
+let handleId = 0;
+
+/**
+ * Next navigation id.
+ * @type {number}
+ */
+let navId = 0;
+
 export const EVENTS = {
     /**
      * Action which you should dispatch when you want to start new navigation.
@@ -40,10 +50,10 @@ export const EVENTS = {
     NAVIGATE: Symbol('NAVIGATE'),
     BEFORE: Symbol('BEFORE_NAVIGATION'),
     POSTPONE: Symbol('POSTPONE_NAVIGATION'),
-    CANCEL: Symbol('CANCEL_NAVIGATION'),
     REGISTER: Symbol('REGISTER_ROUTE'),
     UNREGISTER: Symbol('UNREGISTER_ROUTE'),
     ENDED: Symbol('NAVIGATION_ENDED'),
+    FAILED: Symbol('NAVIGATION_FAILED'),
     IGNORED: Symbol('NAVIGATION_IGNORED'),
     CANCELLED: Symbol('NAVIGATION_CANCELLED'),
 };
@@ -76,8 +86,6 @@ const asyncRoutingModule = (store) => {
     store.on('@init', () => ({
         routing: {
             handles: [],
-            handleId: 0,
-            navId: 0,
         },
     }));
 
@@ -89,27 +97,16 @@ const asyncRoutingModule = (store) => {
         /**
          * @param {StateWithRouting} state
          * @param {RoutingState} state.routing
-         * @param {string | Navigation} n
+         * @param {Navigation} n
          * @return {StateWithRouting | null}
          */
         ({ routing }, n) => {
-            /**
-             * @type {Navigation}
-             */
-            let _n;
-            // normalize argument
-            if (typeof n === 'string') {
-                _n = { url: n, id: routing.navId };
-            } else {
-                _n = { ...n, id: routing.navId };
-            }
-
             // if is navigation in progress
             if (routing.next) {
                 // if is for same url and not forced
-                if (routing.next.url === _n.url && !_n.force) {
+                if (routing.next.url === n.url && !n.force) {
                     // we will ignore this navigation request
-                    store.dispatch(EVENTS.IGNORED, 'Currently in progress');
+                    store.dispatch(EVENTS.IGNORED, n);
                     return null;
                 }
                 // dispatch cancellation
@@ -119,26 +116,27 @@ const asyncRoutingModule = (store) => {
             // if the navigation is to same url as current
             if (
                 routing.current
-                && routing.current.url === _n.url
-                && !_n.force
+                && routing.current.url === n.url
+                && !n.force
             ) {
                 // we will ignore this navigation request
-                store.dispatch(EVENTS.IGNORED, 'Same as current');
+                store.dispatch(EVENTS.IGNORED, n);
                 return null;
             }
 
             // After state update
             Promise.resolve().then(() => {
                 // dispatch before navigation event
-                store.dispatch(EVENTS.BEFORE, _n);
+                if (store.get().routing.next === n) {
+                    store.dispatch(EVENTS.BEFORE, n);
+                }
             });
 
             // update state
             return {
                 routing: {
                     ...routing,
-                    next: _n,
-                    navId: routing.navId + 1,
+                    next: n,
                 },
             };
         },
@@ -164,6 +162,12 @@ const asyncRoutingModule = (store) => {
             routing: { ...routing, next: undefined, current: n },
         }),
     );
+    store.on(EVENTS.FAILED,
+        /**
+         * @param {StateWithRouting} state
+         * @param {RoutingState} state.routing
+         */
+        ({ routing }) => ({ routing: { ...routing, next: undefined } }));
 
     store.on(
         EVENTS.POSTPONE,
@@ -171,31 +175,15 @@ const asyncRoutingModule = (store) => {
          * @param {StateWithRouting} s
          * @return {StateWithRouting}
          */
-        (s) => {
-            if (!s.routing.next) {
-                throw new Error('illegal event for state');
-            }
-            return {
-                routing: {
-                    ...s.routing,
-                    next: {
-                        ...s.routing.next,
-                        async: true,
-                    },
+        s => /** @type {*} */({
+            routing: {
+                ...s.routing,
+                next: {
+                    ...s.routing.next,
+                    async: true,
                 },
-            };
-        },
-    );
-
-    store.on(
-        EVENTS.CANCEL,
-        /**
-         * @param {StateWithRouting} s
-         * @param {Navigation} n
-         */
-        async (s, n) => {
-            store.dispatch(EVENTS.CANCELLED, n);
-        },
+            },
+        }),
     );
 
     store.on(
@@ -237,22 +225,27 @@ const asyncRoutingModule = (store) => {
                     EVENTS.CANCELLED,
                     async () => ac.abort(),
                 );
-                const callbackResult = callback(navigation, ac.signal);
-                if (callbackResult && typeof callbackResult.then === 'function') {
-                    store.dispatch(EVENTS.POSTPONE, navigation);
-                    await callbackResult;
-                    if (!ac.signal.aborted) {
-                        store.dispatch(EVENTS.ENDED, navigation);
-                    }
-                } else {
+                try {
+                    const res = callback(navigation, ac.signal);
                     const { next } = store.get().routing;
+                    // check the navigation was no cancel already
                     if (next && next.id === navigation.id) {
-                        store.dispatch(EVENTS.ENDED, navigation);
+                        if (res && typeof res.then === 'function') {
+                            store.dispatch(EVENTS.POSTPONE, navigation);
+                            await res;
+                            if (!ac.signal.aborted) {
+                                store.dispatch(EVENTS.ENDED, navigation);
+                            }
+                        } else {
+                            store.dispatch(EVENTS.ENDED, navigation);
+                        }
                     }
+                } catch (error) {
+                    store.dispatch(EVENTS.FAILED, { navigation, error });
                 }
                 disconnect();
             } else {
-                throw new Error(`No route handle for url: ${n.url}`);
+                store.dispatch(EVENTS.FAILED, { navigation: n, error: new Error(`No route handle for url: ${n.url}`) });
             }
         },
     );
@@ -267,7 +260,6 @@ const asyncRoutingModule = (store) => {
         (s, h) => ({
             routing: {
                 ...s.routing,
-                handleId: s.routing.handleId + 1,
                 handles: [h, ...s.routing.handles],
             },
         }),
@@ -321,7 +313,8 @@ const asyncRoutingModule = (store) => {
  * });
  */
 function onNavigate(store, route, callback) {
-    const id = store.get().routing.handleId;
+    const id = handleId;
+    handleId += 1;
     routes[id] = {
         id, callback, route, regexp: new RegExp(route),
     };
@@ -342,7 +335,49 @@ function onNavigate(store, route, callback) {
  * @param {boolean} [force] force navigation (even there is ongoing attempt for same route)
  */
 function navigate(store, url, replace, force) {
-    store.dispatch(EVENTS.NAVIGATE, { url, replace, force });
+    const id = navId;
+    navId += 1;
+    return new Promise((res, rej) => {
+        /**
+         * @param {*} [e]
+         */
+        const resolver = e =>
+            /**
+             * @param {StateWithRouting} s
+             * @param {Navigation} n
+             * @return {null}
+             */
+            (s, n) => {
+                if (n.id === id) {
+                    unregister(); // eslint-disable-line no-use-before-define
+                    res(!!e);
+                }
+                return null;
+            };
+        /**
+         * @param {StateWithRouting} s
+         * @param {object} data
+         * @param {Error} data.error
+         * @param {Navigation} data.navigation
+         * @return {null}
+         */
+        const rejector = (s, { error, navigation }) => {
+            if (navigation.id === id) {
+                unregister(); // eslint-disable-line no-use-before-define
+                rej(error);
+            }
+            return null;
+        };
+        const u = [
+            store.on(EVENTS.ENDED, resolver(true)),
+            store.on(EVENTS.CANCELLED, resolver()),
+            store.on(EVENTS.IGNORED, resolver()),
+            store.on(EVENTS.FAILED, rejector)];
+        const unregister = () => u.map(e => e());
+        store.dispatch(EVENTS.NAVIGATE, {
+            url, replace, force, id,
+        });
+    });
 }
 
 /**
@@ -350,7 +385,7 @@ function navigate(store, url, replace, force) {
  * @param {import('storeon').Store.<StateWithRouting>} store
  */
 function cancelNavigation(store) {
-    store.dispatch(EVENTS.CANCEL);
+    store.dispatch(EVENTS.CANCELLED, store.get().routing.next);
 }
 
 export {

@@ -5,7 +5,7 @@
      
 Asynchronous router for [Storeon].    
 
-It size is 950 bytes (minified and gzipped) and uses [Size Limit](https://github.com/ai/size-limit) to control size.
+It size is 969 bytes (minified and gzipped) and uses [Size Limit](https://github.com/ai/size-limit) to control size.
 
 ### Overview
 The key features are:
@@ -14,11 +14,17 @@ The key features are:
 * allows **update** routing definition in fly (eg, when you are loading some self module lazy which should add self controlled routes).
 * **ignores** same routes navigation
 
-
 This router is implementation of idea of **state first routing**, which at first place reflects the 
 navigation within the state, and reflection within the UI stay on application side. 
 Also this library is decoupled from browser history. 
 Examples of integration with browser history or UI code you can find in recipes.
+
+### Install
+> npm i storeon-async-router --save
+
+### Requirements
+* this library internally use [AbortController](https://developer.mozilla.org/en-US/docs/Web/API/AbortController), 
+so for legacy browsers and for node.js you will need to use [abortcontroller-polyfill](https://www.npmjs.com/package/abortcontroller-polyfill)
 
 ### Api
 - `asyncRoutingModule` - is storeon module which contains the whole logic of routing
