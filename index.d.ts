@@ -90,9 +90,11 @@ export interface StateWithRouting {
 /**
  * Storeon router module. Use it during your store creation.
  * @example
+ * ```javascript
  * import createStore from 'storeon';
  * import { asyncRoutingModule } from 'storeon-async-router;
  * const store = createStore([asyncRoutingModule, your_module1 ...]);
+ * ```
  */
 export declare const asyncRoutingModule: (store: Store) => void;
 
@@ -106,10 +108,12 @@ export declare const asyncRoutingModule: (store: Store) => void;
  * @return function for unregistering route handle
  *
  * @example
+ * ```javascript
  * import createStore from 'storeon';
  * import { asyncRoutingModule } from 'storeon-async-router;
  * const store = createStore([asyncRoutingModule, your_module1 ...]);
  * onNavigate(store, '/abc', (navigation) => console.log(`Hello on url ${navigation.url}`);
+ * ```
 */
 export declare function onNavigate(store: Store, route: string, callback: RouteCallback): () => void
 
@@ -124,11 +128,13 @@ export declare function onNavigate(store: Store, route: string, callback: RouteC
  * @return the signal that navigation ends, or navigation failed
  *
  * @example
+ * ```javascript
  * import createStore from 'storeon';
  * import { asyncRoutingModule } from 'storeon-async-router;
  * const store = createStore([asyncRoutingModule, your_module1 ...]);
  * onNavigate(store, '/abc', (navigation) => console.log(`Hello on url ${navigation.url}`);
  * navigate(store, '/abc');
+ * ```
  */
 export declare function navigate(store: Store, url: string, force?: boolean, options?: any): Promise<void>;
 

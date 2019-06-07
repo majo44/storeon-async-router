@@ -9,4 +9,5 @@ test
 husky.config.js
 package-lock.json
 *.iml
+.travis.yml
 tsconfig.json

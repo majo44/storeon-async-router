@@ -1,5 +1,7 @@
 # storeon-async-router
 
+[![GitHub version](https://badge.fury.io/gh/majo44%2Fstoreon-async-router.svg)](https://badge.fury.io/gh/majo44%2Fstoreon-async-router)
+
 <img src="https://storeon.github.io/storeon/logo.svg" align="right"
      alt="Storeon logo by Anton Lovchikov" width="160" height="142">
      
