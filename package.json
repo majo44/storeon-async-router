@@ -65,7 +65,7 @@
     "compile": "tsc --module umd --target es5 --outDir umd --allowJs true index.js",
     "lint:eslint": "eslint \"index.js\"",
     "format:eslint": "eslint \"index.js\" --fix",
-    "docs": "typedoc --includeDeclarations --out docs --exclude node_modules/**/* index.d.ts"
+    "docs": "typedoc --includeDeclarations --excludeExternals --out docs --exclude node_modules/**/* index.d.ts"
   },
   "size-limit": [
     {

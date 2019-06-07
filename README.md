@@ -5,7 +5,7 @@
 <img src="https://storeon.github.io/storeon/logo.svg" align="right"
      alt="Storeon logo by Anton Lovchikov" width="160" height="142">
      
-Asynchronous router for [Storeon].    
+Asynchronous router for [Storeon](https://github.com/storeon/storeon).    
 
 It size is 966 bytes (minified and gzipped) and uses [Size Limit](https://github.com/ai/size-limit) to control size.
 
