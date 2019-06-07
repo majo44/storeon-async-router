@@ -90,7 +90,7 @@ export interface StateWithRouting {
 /**
  * Storeon router module. Use it during your store creation.
  * @example
- * ```javascript
+ * ```
  * import createStore from 'storeon';
  * import { asyncRoutingModule } from 'storeon-async-router;
  * const store = createStore([asyncRoutingModule, your_module1 ...]);
@@ -108,7 +108,7 @@ export declare const asyncRoutingModule: (store: Store) => void;
  * @return function for unregistering route handle
  *
  * @example
- * ```javascript
+ * ```
  * import createStore from 'storeon';
  * import { asyncRoutingModule } from 'storeon-async-router;
  * const store = createStore([asyncRoutingModule, your_module1 ...]);
@@ -128,7 +128,7 @@ export declare function onNavigate(store: Store, route: string, callback: RouteC
  * @return the signal that navigation ends, or navigation failed
  *
  * @example
- * ```javascript
+ * ```
  * import createStore from 'storeon';
  * import { asyncRoutingModule } from 'storeon-async-router;
  * const store = createStore([asyncRoutingModule, your_module1 ...]);
