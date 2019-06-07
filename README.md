@@ -1,6 +1,8 @@
 # storeon-async-router
 
 [![GitHub version](https://badge.fury.io/gh/majo44%2Fstoreon-async-router.svg)](https://badge.fury.io/gh/majo44%2Fstoreon-async-router)
+[![Build Status](https://travis-ci.org/majo44/storeon-async-router.svg?branch=master)](https://travis-ci.org/majo44/storeon-async-router)
+[![Coverage Status](https://coveralls.io/repos/github/majo44/storeon-async-router/badge.svg?branch=master)](https://coveralls.io/github/majo44/storeon-async-router?branch=master)
 
 <img src="https://storeon.github.io/storeon/logo.svg" align="right"
      alt="Storeon logo by Anton Lovchikov" width="160" height="142">
@@ -30,6 +32,32 @@ Examples of integration with browser history or UI code you can find in recipes.
 so for legacy browsers and for node.js you will need to use 
 [abortcontroller-polyfill](https://www.npmjs.com/package/abortcontroller-polyfill)
 
+### Usage
+ 
+```javascript
+import createStore from 'storeon';
+import { asyncRoutingModule } from 'storeon-async-router';
+
+// create store with adding route module
+const store = createStore([asyncRoutingModule]);
+
+// register some route handle
+onNavigate(store, '/home/(?<page>.*)', async (navigation, signal) => {
+    // preload data
+    const homePageData = await fetch(`homeDtataService?page=${navigation.params.page}`, {signal});
+    // dispatch data to store
+    store.dispatch('homeDataLoaded', homePageData);
+});
+
+// triggering navigattion
+navigate(store, '/home/1').then(
+    () => {
+        // aster navigation ...
+        console.log(store.get().routing.current); // => {url: '/home/1', route: '/home/(?<page>.*)'}
+    });
+
+```
+
 ### Api
 - `asyncRoutingModule` - is storeon module which contains the whole logic of routing
 - `onNavigate(store, route, callback)` - function which registers route callback, on provided store 
@@ -54,26 +82,6 @@ unregister the handle. Params:
    - `store` instance of store
 
 ### Examples
-
-#### Creating the store with router module 
-```javascript
-import createStore from 'storeon';
-import { asyncRoutingModule } from 'storeon-async-router';
-
-// create store with adding route module
-const store = createStore([asyncRoutingModule]);
-
-// register some route handle
-onNavigate(store, '/home', () => {
-    console.log('home page');
-});
-
-// in any point of application we can call navigate
-navigate(store, '/home');
-
-// and at the end get the current route (eg for conditions in UI
-store.get().routing.current.route; // => '/home'
-```
 
 #### Redirection
 ```javascript
