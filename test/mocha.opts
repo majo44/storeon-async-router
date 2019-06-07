@@ -1,4 +1,4 @@
 --require test/setup.js
 --full-trace
 --bail
-test/**/*.spec.js
+test/specs.js

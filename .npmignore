@@ -1,0 +1,12 @@
+node_modules
+coverage
+test
+.nyc_output
+.idea
+.gitignore
+.eslintignore
+.eslintrc.js
+husky.config.js
+package-lock.json
+*.iml
+tsconfig.json

@@ -5,13 +5,14 @@
      
 Asynchronous router for [Storeon].    
 
-It size is 969 bytes (minified and gzipped) and uses [Size Limit](https://github.com/ai/size-limit) to control size.
+It size is 966 bytes (minified and gzipped) and uses [Size Limit](https://github.com/ai/size-limit) to control size.
 
 ### Overview
 The key features are:
 * allows **async** route handlers for prefetch the data or lazy loading of modules
 * support for **abort** the routing if there was some navigation cancel eg. by fast clicking
-* allows **update** routing definition in fly (eg, when you are loading some self module lazy which should add self controlled routes).
+* allows **update** routing definition in fly (eg, when you are loading some self module lazy which should add 
+self controlled routes).
 * **ignores** same routes navigation
 
 This router is implementation of idea of **state first routing**, which at first place reflects the 
@@ -24,13 +25,31 @@ Examples of integration with browser history or UI code you can find in recipes.
 
 ### Requirements
 * this library internally use [AbortController](https://developer.mozilla.org/en-US/docs/Web/API/AbortController), 
-so for legacy browsers and for node.js you will need to use [abortcontroller-polyfill](https://www.npmjs.com/package/abortcontroller-polyfill)
+so for legacy browsers and for node.js you will need to use 
+[abortcontroller-polyfill](https://www.npmjs.com/package/abortcontroller-polyfill)
 
 ### Api
 - `asyncRoutingModule` - is storeon module which contains the whole logic of routing
-- `onNavigate(store, route, callback)` - function which registers route callback, on provided store for provided route (path regexp). Callback is a function which will be called if route will be matched, can returns undefined or promise. In case of promise, route will be not applied (navigation will be not ended) until  the promise will be not resolve, callback is also taking the [abortSignal](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal), to be notified that current processing navigation was cancelled.  Important think is that last registered handle have a higher priority, so if at the end you will register handle for route '', that handle will catch all navigations
-- `navigate(store, url, [replace], [force])` - function which triggers navigation to particular url
-- `cancelNavigation(store)` - function which cancel current navigation (if there is any in progress)
+- `onNavigate(store, route, callback)` - function which registers route callback, on provided store 
+for provided route (path regexp string). Callback is a function which will be called if route will be matched, 
+Important think is that last registered handle have a higher 
+priority, so if at the end you will register multiple handle for same route, 
+only the last registered one will be used. `onNavigate` is returns function which can be used for 
+unregister the handle. Params:
+   - `store` instance of store
+   - `route` the route regexp string, for modern browsers you can use regexp group namings
+   - `callback` the callback which will be called when provided route will be matched with requested url. 
+   `callback` can returns undefined or promise. In case of promise, route will be not applied (navigation will be not 
+   ended) until  the promise will be not resolve, callback is also taking the 
+   [abortSignal](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal), to be notified that current 
+   processing navigation was cancelled. 
+- `navigate(store, url, [force], [options])` - function which triggers navigation to particular url. Params:
+   - `store` instance of store
+   - `url` requested url string 
+   - `force` force navigation, if there is a registered route which will match the requested url, even for same url 
+   as current the route callback will be called
+- `cancelNavigation(store)` - function which cancel current navigation (if there is any in progress). Params:
+   - `store` instance of store
 
 ### Examples
 
@@ -78,12 +97,20 @@ const store = createStore([asyncRoutingModule]);
 
 // register route for some page, where in handle we will fetch the data 
 onNavigate(store, '/home', async (navigation, abortSignal) => {
-    // retrieve the data from server
-    const homeContent = await fetch('myapi/home.json');
-    // check that navigation was not cancelled
-    if (!abortSignal.aborted) {
-        // set the data to state by event 
-        store.dispatch('home data loaded', homeContent);    
+    // retrieve the data from server, for modern implementation of fetch we are able 
+    // to provide abort signal for fetch cancellation
+    try {
+        const homeContent = await fetch('myapi/home.json', {signal: abortSignal});
+        // check that navigation was not cancelled during fetch
+        if (!abortSignal.aborted) {
+            // set the data to state by event 
+            store.dispatch('home data loaded', homeContent);    
+        }
+    } catch (e) {
+        // ignore fetch abort error
+        if (e.name !== 'AbortError') {
+            throw e;
+        }
     }
 });  
 ``` 
@@ -154,7 +181,7 @@ function getLocationFullUrl() {
 
 // on application start navigate to current url
 setTimeout(() => {
-    navigate(store, getLocationFullUrl(), false);
+    navigate(store, getLocationFullUrl(), false, {replace: true} );
 });
 
 // connect with back/forwad of browser history
@@ -166,7 +193,7 @@ window.addEventListener('popstate', () => {
 store.on(EVENTS.NAVIGATION_ENDED, async (state, navigation) => {
     // ignore url's from popstate
     if (getLocationFullUrl() !== navigation.url) {
-        navigation.replace ?
+        navigation.options.replace ?
             window.history.replaceState({}, '', navigation.url) :
             window.history.pushState({}, '', navigation.url);
     }
@@ -207,7 +234,6 @@ router.navigate('/home');
 ``` 
 
 
-
 ### Internal data flow
 1. user registers the handles by usage of `onNavigate` (can do this in stereon module, but within the @init callback),
 
@@ -242,6 +268,3 @@ resolve,
 
 5. on `navigation canceled` we are clear the `next` navigation in state
 6. on `navigation end` we move `next` to `current` ins state
-
-
-

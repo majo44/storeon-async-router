@@ -1,0 +1,12 @@
+language: node_js
+node_js:
+  - "node"
+branches:
+  only:
+    - master
+install:
+  - npm install
+  - npm install coveralls
+script:
+  - npm run build
+  - cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js

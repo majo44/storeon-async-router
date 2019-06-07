@@ -1,7 +1,12 @@
 {
   "name": "storeon-async-router",
   "version": "0.1.0",
-  "dependencies": {},
+  "dependencies": {
+    "tsdoc": "0.0.4"
+  },
+  "peerDependencies": {
+    "storeon": "^0.8.5"
+  },
   "devDependencies": {
     "@types/chai": "^4.1.7",
     "@types/chai-as-promised": "^7.1.0",
@@ -15,6 +20,7 @@
     "eslint-config-airbnb-base": "^13.1.0",
     "eslint-plugin-import": "^2.17.3",
     "husky": "^2.3.0",
+    "jsdoc": "^3.6.2",
     "mocha": "^6.1.4",
     "node-fetch": "^2.6.0",
     "npm-run-all": "^4.1.5",
@@ -25,17 +31,20 @@
     "source-map-support": "^0.5.12",
     "storeon": "^0.8.3",
     "ts-node": "^8.2.0",
+    "tsd-jsdoc": "^2.3.0",
     "tslib": "^1.9.3",
+    "typedoc": "^0.14.2",
     "typescript": "^3.5.1"
   },
   "scripts": {
     "size": "size-limit",
-    "build": "run-s lint",
+    "build": "run-s size lint test docs",
     "test": "nyc mocha",
     "lint": "run-s lint:*",
     "lint:types": "tsc",
     "lint:eslint": "eslint \"index.js\"",
-    "format:eslint": "eslint \"index.js\" --fix"
+    "format:eslint": "eslint \"index.js\" --fix",
+    "docs": "typedoc --includeDeclarations --out docs --exclude node_modules/**/* index.d.ts"
   },
   "size-limit": [
     {
@@ -52,8 +61,13 @@
     ],
     "reporter": [
       "text-summary",
-      "html"
+      "html",
+      "lcov"
     ],
+    "branches": 90,
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
     "sourceMap": true,
     "instrument": true
   }

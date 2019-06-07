@@ -1,33 +1,48 @@
 /**
- * @typedef {{
- *      id?: number,
- *      url: string,
- *      replace?: boolean,
- *      force?:boolean,
- *      async?: boolean
- * }} Navigation represents ongoing navigation
- *
- * @typedef {Navigation & {
- *      params?: Object.<PropertyKey, string>,
- *      route: string
- * }} NavigationState represents state of navigation
- *
- * @typedef {{
- *      handles: Array.<{id:number, route: string}>,
- *      current?: NavigationState
- *      next?: Navigation
- * }} RoutingState routing state
- *
- * @typedef {function(Navigation, AbortSignal): (void | Promise.<void>)} RouteCallback
+ * @typedef {Object} Navigation represents ongoing navigation
+ * @property {string} url Requested url.
+ * @property {number} id Unique identifier of navigation.
+ * @property {boolean} [force] Force the navigation, for the cases when even for same url as current
+ *      have to be handled.
+ * @property {*} [options] Additional options for navigation, for browser url navigation it can be
+ *      eg. replace - for replacing url in the url bar, ect..
+ * @property {boolean} [async] Is this navigation processed in async way.
+ */
+
+/**
+ * @typedef {Object} NavigationState represents state of navigation
+ * @property {string} url Requested url.
+ * @property {number} id Unique identifier of navigation.
+ * @property {boolean} [force] Force the navigation, for the cases when even for same url as current
+ *      have to be handled.
+ * @property {*} [options] Additional options for navigation, for browser url navigation it can be
+ *      eg. replace - for replacing url in the url bar, ect..
+ * @property {boolean} [async] Is this navigation processed in async way.
+ * @property {Object<string, string>} [params] Url params. For the case when provided route regexp
+ *      contains some parameters groups.
+ * @property {string} route Route expression which matched that navigation.
+ */
+
+/**
+ * @typedef {Object} RoutingState Routing state.
+ * @property {Array<{id:number, route: string}>} handles Map of registered route handles.
+ * @property {NavigationState | undefined} [current] Current state of navigation.
+ * @property {Navigation | undefined} [next] The navigation which is in progress.
+ */
+
+/**
+ * @typedef {function(Navigation, AbortSignal): (void | Promise<void>)} RouteCallback
  *      callback for route navigation
- *
- * @typedef {{routing: RoutingState}} StateWithRouting
- *      app state with routing module installed
+ */
+
+/**
+ * @typedef {Object} StateWithRouting Type for declaration of store which using asyncRoutingModule.
+ * @property {RoutingState} routing The state of router.
  */
 
 /**
  * Registered routes cache.
- * @type {Object.<number, {id: number, route: string, regexp: RegExp, callback: RouteCallback}>}
+ * @type {Object<number, {id: number, route: string, regexp: RegExp, callback: RouteCallback}>}
  */
 const routes = {};
 
@@ -59,25 +74,14 @@ export const EVENTS = {
 };
 
 /**
- * Stereon router module.
- * Register the routing workflow.
+ * Storeon router module. Use it during your store creation.
  *
- * @public
  * @param {import('storeon').Store<StateWithRouting>} store store instace
  *
  * @example
- * import sreateStore from 'storeon';
- * import { asyncRoutingModule } from 'storeon-async-router';
- * // add module to storeon
- * const store = createStore([asyncRoutingModule ]);
- * // handle route
- * onNavigate(store, '/home', () => {
- *    console.log('home page');
- * });
- * // navigate
- * navigate('/home');
- * // getting current
- * store.get().routing.current.route; // => '/home'
+ * import createStore from 'storeon';
+ * import { asyncRoutingModule } from 'storeon-async-router;
+ * const store = createStore([asyncRoutingModule, your_module1 ...]);
  */
 const asyncRoutingModule = (store) => {
     /**
@@ -202,12 +206,14 @@ const asyncRoutingModule = (store) => {
              * @type {string}
              */
             let route = '';
+            // loohing for handle which related route matched requested url
             const handle = s.routing.handles.find(({ id }) => {
                 match = n.url.match(routes[id].regexp);
                 ({ route } = routes[id]);
                 return !!match;
             });
             if (handle) {
+                // prepare navigation state
                 /**
                  * @type {NavigationState}
                  */
@@ -219,33 +225,55 @@ const asyncRoutingModule = (store) => {
                         .../** @type {*} */(match).splice(1),
                     },
                 };
+                // taking callback for matched route
                 const { callback } = routes[handle.id];
+                // allows to cancellation
                 const ac = new AbortController();
                 const disconnect = store.on(
                     EVENTS.CANCELLED,
-                    async () => ac.abort(),
+                    /**
+                     * @param {StateWithRouting} ls
+                     * @param {Navigation} ln
+                     * @return {null}
+                     */
+                    (ls, ln) => {
+                        if (ln.id === navigation.id) {
+                            ac.abort();
+                        }
+                        return null;
+                    },
                 );
                 try {
+                    // call callback
                     const res = callback(navigation, ac.signal);
+                    // taking new next (can be modified by callback)
                     const { next } = store.get().routing;
                     // check the navigation was no cancel already
                     if (next && next.id === navigation.id) {
                         if (res && typeof res.then === 'function') {
+                            // if handle is async, notify store that we have to postpone navigation
                             store.dispatch(EVENTS.POSTPONE, navigation);
+                            // await for end of callback
                             await res;
                             if (!ac.signal.aborted) {
+                                // if was not cancelled, confirm end of navigation
                                 store.dispatch(EVENTS.ENDED, navigation);
                             }
                         } else {
+                            // for synchronous, confirm end of navigation
                             store.dispatch(EVENTS.ENDED, navigation);
                         }
                     }
                 } catch (error) {
+                    // on any error
                     store.dispatch(EVENTS.FAILED, { navigation, error });
                 }
+                // at the end disconnect cancellation
                 disconnect();
             } else {
-                store.dispatch(EVENTS.FAILED, { navigation: n, error: new Error(`No route handle for url: ${n.url}`) });
+                // if there is no matched route
+                store.dispatch(EVENTS.FAILED,
+                    { navigation: n, error: new Error(`No route handle for url: ${n.url}`) });
             }
         },
     );
@@ -285,7 +313,7 @@ const asyncRoutingModule = (store) => {
 /**
  * Register the route handler to top of stack of handles.
  *
- * @param {import('storeon').Store.<StateWithRouting>} store on store
+ * @param {import('storeon').Store<StateWithRouting>} store on store
  * @param {string} route the route regexp string
  * @param {RouteCallback} callback the callback which will be called on provided route
  *
@@ -329,31 +357,29 @@ function onNavigate(store, route, callback) {
 /**
  * Navigate to provided route.
  *
- * @param {import('storeon').Store.<StateWithRouting>} store on store
+ * @param {import('storeon').Store<StateWithRouting>} store on store
  * @param {string} url to url
- * @param {boolean} [replace] replace url
+ * @param {*} [options] additional options for navigation, for browser url navigation it can be
+ *      eg. replace - for replacing url in the url bar, ect..
  * @param {boolean} [force] force navigation (even there is ongoing attempt for same route)
+ * @return {Promise<void>} the signal that navigation ends, or navigation failed
  */
-function navigate(store, url, replace, force) {
+function navigate(store, url, force, options) {
     const id = navId;
     navId += 1;
     return new Promise((res, rej) => {
         /**
-         * @param {*} [e]
+         * @param {StateWithRouting} s
+         * @param {Navigation} n
+         * @return {null}
          */
-        const resolver = e =>
-            /**
-             * @param {StateWithRouting} s
-             * @param {Navigation} n
-             * @return {null}
-             */
-            (s, n) => {
-                if (n.id === id) {
-                    unregister(); // eslint-disable-line no-use-before-define
-                    res(!!e);
-                }
-                return null;
-            };
+        const resolver = (s, n) => {
+            if (n.id === id) {
+                unregister(); // eslint-disable-line no-use-before-define
+                res();
+            }
+            return null;
+        };
         /**
          * @param {StateWithRouting} s
          * @param {object} data
@@ -369,13 +395,13 @@ function navigate(store, url, replace, force) {
             return null;
         };
         const u = [
-            store.on(EVENTS.ENDED, resolver(true)),
-            store.on(EVENTS.CANCELLED, resolver()),
-            store.on(EVENTS.IGNORED, resolver()),
+            store.on(EVENTS.ENDED, resolver),
+            store.on(EVENTS.CANCELLED, resolver),
+            store.on(EVENTS.IGNORED, resolver),
             store.on(EVENTS.FAILED, rejector)];
         const unregister = () => u.map(e => e());
         store.dispatch(EVENTS.NAVIGATE, {
-            url, replace, force, id,
+            url, options, force, id,
         });
     });
 }
