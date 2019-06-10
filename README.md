@@ -1,6 +1,6 @@
 # storeon-async-router
 
-[![GitHub version](https://badge.fury.io/gh/majo44%2Fstoreon-async-router.svg)](https://badge.fury.io/gh/majo44%2Fstoreon-async-router)
+[![npm version](https://badge.fury.io/js/storeon-async-router.svg)](https://badge.fury.io/js/storeon-async-router)
 [![Build Status](https://travis-ci.org/majo44/storeon-async-router.svg?branch=master)](https://travis-ci.org/majo44/storeon-async-router)
 [![Coverage Status](https://coveralls.io/repos/github/majo44/storeon-async-router/badge.svg?branch=master)](https://coveralls.io/github/majo44/storeon-async-router?branch=master)
 
@@ -9,7 +9,7 @@
      
 Asynchronous router for [Storeon](https://github.com/storeon/storeon).    
 
-It size is 966 bytes (minified and gzipped) and uses [Size Limit](https://github.com/ai/size-limit) to control size.
+It size is 976 bytes (minified and gzipped) and uses [Size Limit](https://github.com/ai/size-limit) to control size.
 
 ### Overview
 The key features are:

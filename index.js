@@ -85,6 +85,12 @@ export const EVENTS = {
  */
 const asyncRoutingModule = (store) => {
     /**
+     * @param {object} state
+     * @param {RoutingState} state.routing
+     */
+    const ignoreNext = ({ routing }) => ({ routing: { ...routing, next: undefined } });
+
+    /**
      * Set default state on initialization.
      */
     store.on('@init', () => ({
@@ -147,15 +153,6 @@ const asyncRoutingModule = (store) => {
     );
 
     store.on(
-        EVENTS.CANCELLED,
-        /**
-         * @param {StateWithRouting} state
-         * @param {RoutingState} state.routing
-         */
-        ({ routing }) => ({ routing: { ...routing, next: undefined } }),
-    );
-
-    store.on(
         EVENTS.ENDED,
         /**
          * @param {StateWithRouting} state
@@ -166,12 +163,6 @@ const asyncRoutingModule = (store) => {
             routing: { ...routing, next: undefined, current: n },
         }),
     );
-    store.on(EVENTS.FAILED,
-        /**
-         * @param {StateWithRouting} state
-         * @param {RoutingState} state.routing
-         */
-        ({ routing }) => ({ routing: { ...routing, next: undefined } }));
 
     store.on(
         EVENTS.POSTPONE,
@@ -311,6 +302,8 @@ const asyncRoutingModule = (store) => {
         }),
     );
     store.on(EVENTS.IGNORED, async () => {});
+    store.on(EVENTS.CANCELLED, ignoreNext);
+    store.on(EVENTS.FAILED, ignoreNext);
 };
 
 /**
