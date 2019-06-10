@@ -1,11 +1,13 @@
 import * as createStore from 'storeon';
+import * as logger from 'storeon/devtools/logger';
+
 import { onNavigate, asyncRoutingModule, navigate, cancelNavigation } from '../index.js';
 
 describe(`simple scenarions`, () => {
 
     let store;
     beforeEach(() => {
-        store = createStore([asyncRoutingModule]);
+        store = createStore([asyncRoutingModule ]);
     });
 
     it(`Router should call handle for proper registered route`, async () => {
@@ -137,6 +139,21 @@ describe(`simple scenarions`, () => {
         await navigate(store, '/b');
         expect(store.get().routing.current.url).eq('/a');
         expect(store.get().routing.current.route).eq('/a');
+    });
+    
+    it('Router should ignore AbortError', async () => {
+        const spy = sinon.fake();
+        let continueSemaphore;
+        let semaphore = new Promise(res => continueSemaphore = res);
+        onNavigate(store, '/a', async (navigation, signal) => {
+            continueSemaphore();
+            await fetch('http://slowwly.robertomurray.co.uk/delay/3000/url/http://www.google.co.uk', {signal});
+            spy();
+        });
+        navigate(store, '/a');
+        await semaphore;
+        cancelNavigation(store);
+        expect(spy).not.called;
     });
 
 });

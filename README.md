@@ -53,7 +53,7 @@ onNavigate(store, '/home/(?<page>.*)', async (navigation, signal) => {
 navigate(store, '/home/1').then(
     () => {
         // aster navigation ...
-        console.log(store.get().routing.current); // => {url: '/home/1', route: '/home/(?<page>.*)'}
+        console.log(store.get().routing.current); // => {url: '/home/1', route: '/home/(?<page>.*)', ...}
     });
 
 ```
@@ -106,22 +106,15 @@ import { asyncRoutingModule, onNavigate } from 'storeon-async-router';
 const store = createStore([asyncRoutingModule]);
 
 // register route for some page, where in handle we will fetch the data 
-onNavigate(store, '/home', async (navigation, abortSignal) => {
-    // retrieve the data from server, for modern implementation of fetch we are able 
-    // to provide abort signal for fetch cancellation
-    try {
-        const homeContent = await fetch('myapi/home.json', {signal: abortSignal});
-        // check that navigation was not cancelled during fetch
-        if (!abortSignal.aborted) {
-            // set the data to state by event 
-            store.dispatch('home data loaded', homeContent);    
-        }
-    } catch (e) {
-        // ignore fetch abort error
-        if (e.name !== 'AbortError') {
-            throw e;
-        }
-    }
+onNavigate(store, '/home', async (navigation, signal) => {
+    // retrieve the data from server, 
+    // we are able to use our abort signal for fetch cancellation
+    // please notice that on cancel fetch will throw AbortError
+    // which will stop the flow
+    // but this error will be ignored on router level
+    const homeContent = await fetch('myapi/home.json', {signal});
+    // set the data to state by event 
+    store.dispatch('home data loaded', homeContent);    
 });  
 ``` 
 
@@ -143,7 +136,8 @@ const store = createStore([asyncRoutingModule]);
 const unRegister = onNavigate(store, '/admin', async (navigation, abortSignal) => {
     // preload some lazy module
     const adminModule = await import('./lazy/adminModule.js');
-    // check that navigation was not cancelled
+    // check that navigation was not cancelled 
+    // as dynamic import is not support cancelation itself like fetch api
     if (!abortSignal.aborted) {
         // unregister app level route handle for that route
         // the lazy module will take by self control over the internal routing 
@@ -278,3 +272,8 @@ resolve,
 
 5. on `navigation canceled` we are clear the `next` navigation in state
 6. on `navigation end` we move `next` to `current` ins state
+
+### TODO
+
+* Samples
+* Auto test for samples 

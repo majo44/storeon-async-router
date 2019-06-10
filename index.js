@@ -237,6 +237,7 @@ const asyncRoutingModule = (store) => {
                      * @return {null}
                      */
                     (ls, ln) => {
+                        /* istanbul ignore else */
                         if (ln.id === navigation.id) {
                             ac.abort();
                         }
@@ -265,8 +266,10 @@ const asyncRoutingModule = (store) => {
                         }
                     }
                 } catch (error) {
-                    // on any error
-                    store.dispatch(EVENTS.FAILED, { navigation, error });
+                    if (error.name !== 'AbortError') {
+                        // on any error
+                        store.dispatch(EVENTS.FAILED, { navigation, error });
+                    }
                 }
                 // at the end disconnect cancellation
                 disconnect();
@@ -388,6 +391,7 @@ function navigate(store, url, force, options) {
          * @return {null}
          */
         const rejector = (s, { error, navigation }) => {
+            /* istanbul ignore else */
             if (navigation.id === id) {
                 unregister(); // eslint-disable-line no-use-before-define
                 rej(error);
