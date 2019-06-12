@@ -1,6 +1,6 @@
 {
   "name": "storeon-async-router",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Asynchronous router for [Storeon]",
   "repository": {
     "type": "git",
@@ -61,13 +61,13 @@
   "scripts": {
     "size": "size-limit",
     "build": "run-s size lint test compile docs",
+    "compile": "tsc --module umd --target es5 --outDir umd --allowJs true index.js",
+    "docs": "typedoc --theme minimal --includeDeclarations --excludeExternals --out docs --exclude \"node_modules/**/*\" index.d.ts",
     "test": "nyc mocha",
     "lint": "run-s lint:*",
     "lint:types": "tsc",
-    "compile": "tsc --module umd --target es5 --outDir umd --allowJs true index.js",
     "lint:eslint": "eslint \"index.js\"",
-    "format:eslint": "eslint \"index.js\" --fix",
-    "docs": "typedoc --theme minimal --includeDeclarations --excludeExternals --out docs --exclude \"node_modules/**/*\" index.d.ts"
+    "format:eslint": "eslint \"index.js\" --fix"
   },
   "size-limit": [
     {
@@ -87,7 +87,7 @@
       "html",
       "lcov"
     ],
-    "branches": 90,
+    "branches": 100,
     "lines": 100,
     "functions": 100,
     "statements": 100,

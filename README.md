@@ -30,33 +30,54 @@ Examples of integration with browser history or UI code you can find in recipes.
 ### Requirements
 * this library internally use [AbortController](https://developer.mozilla.org/en-US/docs/Web/API/AbortController), 
 so for legacy browsers and for node.js you will need to use 
-[abortcontroller-polyfill](https://www.npmjs.com/package/abortcontroller-polyfill)
+[abortcontroller-polyfill](https://www.npmjs.com/package/abortcontroller-polyfill). Please 
+refer to [abortcontroller-polyfill](https://www.npmjs.com/package/abortcontroller-polyfill) documentation, as it is requires 
+also polyfilles for promise (on IE) and fetch (Node and IE). 
 
 ### Usage
  
 ```javascript
-import createStore from 'storeon';
-import { asyncRoutingModule } from 'storeon-async-router';
+import createStore from "storeon";
+import storeonDevTool from "storeon/devtools/index";
+import { asyncRoutingModule, onNavigate, navigate } from "storeon-async-router";
 
 // create store with adding route module
-const store = createStore([asyncRoutingModule]);
+const store = createStore([asyncRoutingModule, storeonDevTool]);
 
-// register some route handle
-onNavigate(store, '/home/(?<page>.*)', async (navigation, signal) => {
-    // preload data
-    const homePageData = await fetch(`homeDtataService?page=${navigation.params.page}`, {signal});
-    // dispatch data to store
-    store.dispatch('homeDataLoaded', homePageData);
+// handle data flow events
+store.on("dataLoaded", (state, data) => ({ data }));
+
+// repaint state
+store.on("@changed", state => {
+  document.querySelector(".out").innerHTML = state.routing.next
+    ? `Loading ${state.routing.next.url}`
+    : JSON.stringify(state.data);
 });
 
-// triggering navigattion
-navigate(store, '/home/1').then(
-    () => {
-        // aster navigation ...
-        console.log(store.get().routing.current); // => {url: '/home/1', route: '/home/(?<page>.*)', ...}
-    });
+// register some route handle
+onNavigate(store, "/home/(?<page>.*)", async (navigation, signal) => {
+  // preload data
+  const homePageData = await fetch(`${navigation.params.page}.json`, {
+    signal
+  }).then(response => response.json());
+  // const homePageData = await homePageDataResponse.json();
+  // dispatch data to store
+  store.dispatch("dataLoaded", homePageData);
+});
 
+// map anchors href to navigation event
+document.querySelectorAll("a").forEach((anchor, no) =>
+  anchor.addEventListener("click", e => {
+    e.preventDefault();
+    navigate(store, anchor.getAttribute("href"));
+  })
+);
 ```
+[![Edit storeon-async-router-simple-sample](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/storeon-async-routersample1-r1ey6?fontsize=14)
+
+Or visit working [demo](https://r1ey6.codesandbox.io/) and try to run with Redux development tools, and  
+try to fast click with http throttling, to see the navigation cancellation.
+
 
 ### Api
 - `asyncRoutingModule` - is storeon module which contains the whole logic of routing
@@ -86,40 +107,46 @@ unregister the handle. Params:
 #### Redirection
 Redirection of navigation from one route handler to another route.  
 ```javascript
-import createStore from 'storeon';
-import { asyncRoutingModule, onNavigate, navigate } from 'storeon-async-router';
-
-// create store with adding route module
-const store = createStore([asyncRoutingModule]);
-
-// register route for any route and in handle navigate to other path
-onNavigate(store, '', () => {
-    navigate(store, '/404')
-});  
+// example of redirection from page to page
+// the last registered route handle have a bigger priority then previous one
+onNavigate(store, "/home/1", () => navigate(store, '/home/2'));
 ``` 
+[![Edit storeon-async-router-redirection-sample](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/storeon-async-router-simple-sample-mp91n?fontsize=14)
 
+
+#### "Otherwise" Redirection
+
+The very special case is "otherwise" route, such route is covers all uncovered routes and handler of such route 
+should simply redirect navigation to well known route. 
+Please remember also that "otherwise" route should be registered as a very first, as in [storeon-async-router] the 
+highest priority has last registered routes.
+
+```javascript
+// example of "otherwise" redirection
+// so for any unhandled route, we will redirect to '/404' route
+onNavigate(store, "", () => navigate(store, '/404'));
+``` 
+  
 #### Async route handle
 ##### Preloading the data
 For case when before of navigation we want to preload some data, we can use async route handle and postpone the navigation.
 We can use abort signal for aborting the ongoing fetch.     
 ```javascript
-import createStore from 'storeon';
-import { asyncRoutingModule, onNavigate } from 'storeon-async-router';
- // create store with adding route module
-const store = createStore([asyncRoutingModule]);
-
-// register route for some page, where in handle we will fetch the data 
-onNavigate(store, '/home', async (navigation, signal) => {
-    // retrieve the data from server, 
-    // we are able to use our abort signal for fetch cancellation
-    // please notice that on cancel fetch will throw AbortError
-    // which will stop the flow
-    // but this error will be ignored on router level
-    const homeContent = await fetch('myapi/home.json', {signal});
-    // set the data to state by event 
-    store.dispatch('home data loaded', homeContent);    
-});  
+// register async route handle 
+onNavigate(store, "/home/(?<page>.*)", async (navigation, signal) => {
+  // retrieve the data from server, 
+  // we are able to use our abort signal for fetch cancellation
+  // please notice that on cancel, fetch will throw AbortError
+  // which will stop the flow but this error will be handled on router level  
+  const homePageData = await fetch(`${navigation.params.page}.json`, {
+    signal
+  }).then(response => response.json());
+  // dispatch data to store
+  store.dispatch("dataLoaded", homePageData);
+});
 ``` 
+[![Edit storeon-async-router-simple-sample](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/storeon-async-routersample1-r1ey6?fontsize=14)
+
 
 ##### Lazy loading of submodule
 For application code splitting we can simple use es6 `import()` function. In case when you will want to spilt your by the 
@@ -127,113 +154,118 @@ routes, you can simple do that with async router. What you need to do is just aw
 route handle. You can additionally extend your routing within the loaded module.
 
 ```javascript    
-// app.js
-import createStore from 'storeon';
-import { asyncRoutingModule, onNavigate, navigate } from 'storeon-async-router';
-
-// create store with adding route module
-const store = createStore([asyncRoutingModule]);
+// ./app.js
+// example of lazy loading
 // register the navigation to admin page, but keeps reference to unregister function
-const unRegister = onNavigate(store, '/admin', async (navigation, abortSignal) => {
+const unRegister = onNavigate(
+  store,
+  "/admin",
+  async (navigation, abortSignal) => {
     // preload some lazy module
-    const adminModule = await import('./lazy/adminModule.js');
-    // check that navigation was not cancelled 
+    const adminModule = await import("./adminModule.js");
+    // check that navigation was not cancelled
     // as dynamic import is not support cancelation itself like fetch api
     if (!abortSignal.aborted) {
-        // unregister app level route handle for that route
-        // the lazy module will take by self control over the internal routing 
-        unRegister();
-        // init module, here we will register event handlers on storeon in lazy loaded module 
-        adminModule.adminModule(store);
-        // navigate once again (with force flag) to trigger the route handle from lazy loaded module 
-        navigate(store, navigation.url, false, true);
+      // unregister app level route handle for that route
+      // the lazy module will take by self control over the internal routing
+      unRegister();
+      // init module, here we will register event handlers on storeon in 
+      // lazy loaded module
+      adminModule.adminModule(store);
+      // navigate once again (with force flag) to trigger the route handle from 
+      // lazy loaded module
+      navigate(store, navigation.url, true);
     }
-});
+  }
+);
 ```
 
 ```javascript    
-// ./lazy/adminModule.js
-import { onNavigate } from 'storeon-async-router';
-
+// ./adminModule.js
 /**
- * @param {*} store
+ * Function which is responsible for initialize the lazy loaded module
  */
 export function adminModule(store) {
-    // registering own routing handler
-    onNavigate(store, '/admin', async () => {
-        console.log('ADMIN');
-    });
+  // registering own routing handler for the route of my module
+  onNavigate(store, "/admin", async (navigation, signal) => {
+    // preload data
+    const adminPageData = await fetch(`admin.json`, {
+      signal
+    }).then(response => response.json());
+    // const homePageData = await homePageDataResponse.json();
+    // dispatch data to store
+    store.dispatch("dataLoaded", adminPageData);
+  });
 }
+
 ```
+[![Edit storeon-async-router-lazy-load-sample](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/storeon-async-router-redirection-sample-h3p66?fontsize=14)
 
 #### Integration with browser history
 In order to synchronize the routing state within the store with the browser history (back/forward, location) 
 we can simple connect the store with browser history object by fallowing code:
 
-```javascript    
-import createStore from 'storeon';
-import { asyncRoutingModule, onNavigate, navigate, EVENTS } from 'storeon-async-router';
-
-// create store with adding route module
-const store = createStore([asyncRoutingModule]);
-
-// returns full url 
+```javascript   
+// returns full url
 function getLocationFullUrl() {
-    return window.location.pathname
-        + (window.location.search ? window.location.search : '')
-        + (window.location.hash ? window.location.hash : '');
+  // we are building full url here, but if you care in your app only on 
+  // path you can simplify that code, and return just window.location.pathname
+  return (
+    window.location.pathname +
+    (window.location.search ? window.location.search : "") +
+    (window.location.hash ? window.location.hash : "")
+  );
 }
 
 // on application start navigate to current url
 setTimeout(() => {
-    navigate(store, getLocationFullUrl(), false, {replace: true} );
+  navigate(store, getLocationFullUrl(), false, { replace: true });
 });
 
 // connect with back/forwad of browser history
-window.addEventListener('popstate', () => {
-    navigate(store, getLocationFullUrl());
+window.addEventListener("popstate", () => {
+  navigate(store, getLocationFullUrl());
 });
 
 // connecting store changes to browser history
 store.on(EVENTS.ENDED, async (state, navigation) => {
-    // ignore url's from popstate
-    if (getLocationFullUrl() !== navigation.url) {
-        navigation.options.replace ?
-            window.history.replaceState({}, '', navigation.url) :
-            window.history.pushState({}, '', navigation.url);
-    }
+  // ignore url's from popstate
+  if (getLocationFullUrl() !== navigation.url) {
+    navigation.options && navigation.options.replace
+      ? window.history.replaceState({}, "", navigation.url)
+      : window.history.pushState({}, "", navigation.url);
+  }
 });
 ```
+[![Edit storeon-async-router-browser-history-sample](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/storeon-async-router-lazy-load-sample-r9pz0?fontsize=14)
+
+Please remember that with such solution you should probably also set in your html document head `<base href="/"/>`  
 
 #### Handling the anchor click events globally
 To handle any html anchor click over the page you cansimple create global click handler like that:
 ```javascript
-import createStore from 'storeon';
-import { asyncRoutingModule, navigate } from 'storeon-async-router';
-
-// create store with adding route module
-const store = createStore([asyncRoutingModule]);
-
-document.body.addEventListener('click', function (event) {
-    // handle anchors click, ignore external, and open in new tab   
-    if (
-        !event.defaultPrevented &&
-        event.target.tagName === 'A' &&
-        event.target.href.indexOf(window.location.origin) === 0 &&
-        event.target.target !== '_blank' &&
-        event.button === 0 &&
-        event.which === 1 &&
-        !event.metaKey &&
-        !event.ctrlKey &&
-        !event.shiftKey &&
-        !event.altKey
-    ){
-        event.preventDefault();
-        const path = event.target.href.slice(window.location.origin.length);
-        navigate(store, path);
-    }
-})
+// on body level
+document.body.addEventListener("click", function(event) {
+  // handle anchors click, ignore external, and open in new tab
+  if (
+    !event.defaultPrevented &&
+    event.target.tagName === "A" &&
+    event.target.href.indexOf(window.location.origin) === 0 &&
+    event.target.target !== "_blank" &&
+    event.button === 0 &&
+    event.which === 1 &&
+    !event.metaKey &&
+    !event.ctrlKey &&
+    !event.shiftKey &&
+    !event.altKey
+  ) {
+    event.preventDefault();
+    const path = event.target.href.slice(window.location.origin.length);
+    navigate(store, path);
+  }
+});
 ```
+[![Edit storeon-async-router-global-anchor-sample](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/storeon-async-router-browser-history-sample-sybtj?fontsize=14)
 
 #### Encapsulate routing to shared router object
 If you do not want always to deliver store to utility functions you can simple encapsulate all functionality to single 
@@ -251,8 +283,7 @@ function routerFactory(store) {
             return store.get().routing.current;
         },
         navigate: navigate.bind(null, store),
-        onNavigate: onNavigate.bind(null, store),
-        cancelNavigation: cancelNavigation.bind(null, store)
+        onNavigate: onNavigate.bind(null, store)
     }
 }
 // router instance
@@ -262,7 +293,7 @@ router.onNavigate('/home', () => {});
 // navigate to url
 router.navigate('/home'); 
 ``` 
-
+[![Edit storeon-async-router-router-object-sample](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/storeon-async-router-global-anchor-sample-e7q66?fontsize=14)
 
 ### Internal data flow
 1. user registers the handles by usage of `onNavigate` (can do this in stereon module, but within the @init callback),
@@ -298,8 +329,3 @@ resolve,
 
 5. on `navigation canceled` we are clear the `next` navigation in state
 6. on `navigation end` we move `next` to `current` ins state
-
-### TODO
-
-* Samples
-* Auto test for samples 
