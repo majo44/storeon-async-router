@@ -81,6 +81,9 @@ try to fast click with http throttling, to see the navigation cancellation.
 
 ### Api
 - `asyncRoutingModule` - is storeon module which contains the whole logic of routing
+   - this module contains reducer for the `routing` state property which contains:
+      - `current` current applied `Navigation`
+      - `next` ongoing `Navigation` (if there is any)
 - `onNavigate(store, route, callback)` - function which registers route callback, on provided store 
 for provided route (path regexp string). Callback is a function which will be called if route will be matched, 
 Important think is that last registered handle have a higher 
@@ -91,9 +94,11 @@ unregister the handle. Params:
    - `route` the route regexp string, for modern browsers you can use regexp group namings
    - `callback` the callback which will be called when provided route will be matched with requested url. 
    `callback` can returns undefined or promise. In case of promise, route will be not applied (navigation will be not 
-   ended) until  the promise will be not resolve, callback is also taking the 
-   [abortSignal](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal), to be notified that current 
-   processing navigation was cancelled. 
+   ended) until the promise will be not resolve. Callback is called with two parameters:
+      - `navigation` ongoing `Navigation` object
+      - `signal` which is [AbortSignal](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal), 
+      to be notified that current processed navigation was cancelled. That parameter can be used directly on 
+      calls of [fetch](https://developers.google.com/web/updates/2017/09/abortable-fetch) api.   
 - `navigate(store, url, [force], [options])` - function which triggers navigation to particular url. Params:
    - `store` instance of store
    - `url` requested url string 
@@ -101,6 +106,14 @@ unregister the handle. Params:
    as current the route callback will be called
 - `cancelNavigation(store)` - function which cancel current navigation (if there is any in progress). Params:
    - `store` instance of store
+- `Navigation` object contains
+    - `url` requested url
+    - `id` unique identifier of navigation
+    - `options` additional options for navigation, for browser url navigation it can be
+    eg. replace - for replacing url in the url bar, ect..
+    - `force` force the navigation, for the cases when even for same url as current have to be handled
+    - `params` map of route parameters values (handled by matched route regexp grops)
+    - `route` the route which handled that navigation 
 
 ### Recipes 
 
@@ -147,6 +160,10 @@ onNavigate(store, "/home/(?<page>.*)", async (navigation, signal) => {
 ``` 
 [![Edit storeon-async-router-simple-sample](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/storeon-async-routersample1-r1ey6?fontsize=14)
 
+Please notice that used in example [RegExp named capture groups](http://2ality.com/2017/05/regexp-named-capture-groups.html) 
+(like `/home/(?<page>.*)`) are part of ES2018 standard, and this syntax is not supported yet on 
+[all browsers](https://kangax.github.io/compat-table/es2016plus/#test-RegExp_named_capture_groups). As a alternative you
+can refer the parameters by the order no, so instead of `navigation.params.page` you can use `navigation.params[0]`.    
 
 ##### Lazy loading of submodule
 For application code splitting we can simple use es6 `import()` function. In case when you will want to spilt your by the 
