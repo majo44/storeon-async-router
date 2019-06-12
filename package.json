@@ -1,7 +1,12 @@
 {
   "name": "storeon-async-router",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Asynchronous router for [Storeon]",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/majo44/storeon-async-router.git"
+  },
+  "bugs": "https://github.com/majo44/storeon-async-router/issues",
   "keywords": [
     "storeon",
     "router",
@@ -23,9 +28,6 @@
     }
   ],
   "license": "MIT",
-  "dependencies": {
-    "tsdoc": "0.0.4"
-  },
   "peerDependencies": {
     "storeon": "^0.8.5"
   },
@@ -91,5 +93,10 @@
     "statements": 100,
     "sourceMap": true,
     "instrument": true
+  },
+  "husky" : {
+    "hooks": {
+      "pre-commit": "npm run build"
+    }
   }
 }

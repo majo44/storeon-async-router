@@ -81,9 +81,10 @@ unregister the handle. Params:
 - `cancelNavigation(store)` - function which cancel current navigation (if there is any in progress). Params:
    - `store` instance of store
 
-### Examples
+### Recipes 
 
 #### Redirection
+Redirection of navigation from one route handler to another route.  
 ```javascript
 import createStore from 'storeon';
 import { asyncRoutingModule, onNavigate, navigate } from 'storeon-async-router';
@@ -99,6 +100,8 @@ onNavigate(store, '', () => {
 
 #### Async route handle
 ##### Preloading the data
+For case when before of navigation we want to preload some data, we can use async route handle and postpone the navigation.
+We can use abort signal for aborting the ongoing fetch.     
 ```javascript
 import createStore from 'storeon';
 import { asyncRoutingModule, onNavigate } from 'storeon-async-router';
@@ -118,9 +121,7 @@ onNavigate(store, '/home', async (navigation, signal) => {
 });  
 ``` 
 
-### Recipes 
-
-#### Lazy loading of submodule
+##### Lazy loading of submodule
 For application code splitting we can simple use es6 `import()` function. In case when you will want to spilt your by the 
 routes, you can simple do that with async router. What you need to do is just await for `import()` your lazy module within the 
 route handle. You can additionally extend your routing within the loaded module.
@@ -194,7 +195,7 @@ window.addEventListener('popstate', () => {
 });
 
 // connecting store changes to browser history
-store.on(EVENTS.NAVIGATION_ENDED, async (state, navigation) => {
+store.on(EVENTS.ENDED, async (state, navigation) => {
     // ignore url's from popstate
     if (getLocationFullUrl() !== navigation.url) {
         navigation.options.replace ?
@@ -207,6 +208,31 @@ store.on(EVENTS.NAVIGATION_ENDED, async (state, navigation) => {
 #### Handling the anchor click events globally
 To handle any html anchor click over the page you cansimple create global click handler like that:
 ```javascript
+import createStore from 'storeon';
+import { asyncRoutingModule, navigate } from 'storeon-async-router';
+
+// create store with adding route module
+const store = createStore([asyncRoutingModule]);
+
+document.body.addEventListener('click', function (event) {
+    // handle anchors click, ignore external, and open in new tab   
+    if (
+        !event.defaultPrevented &&
+        event.target.tagName === 'A' &&
+        event.target.href.indexOf(window.location.origin) === 0 &&
+        event.target.target !== '_blank' &&
+        event.button === 0 &&
+        event.which === 1 &&
+        !event.metaKey &&
+        !event.ctrlKey &&
+        !event.shiftKey &&
+        !event.altKey
+    ){
+        event.preventDefault();
+        const path = event.target.href.slice(window.location.origin.length);
+        navigate(store, path);
+    }
+})
 ```
 
 #### Encapsulate routing to shared router object
