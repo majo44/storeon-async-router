@@ -60,7 +60,6 @@ onNavigate(store, "/home/(?<page>.*)", async (navigation, signal) => {
   const homePageData = await fetch(`${navigation.params.page}.json`, {
     signal
   }).then(response => response.json());
-  // const homePageData = await homePageDataResponse.json();
   // dispatch data to store
   store.dispatch("dataLoaded", homePageData);
 });
