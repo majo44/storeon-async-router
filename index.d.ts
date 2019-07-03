@@ -143,3 +143,13 @@ export declare function navigate(store: Store, url: string, force?: boolean, opt
  * @param store on store
  */
 export declare function cancelNavigation(store: Store): void;
+
+export declare const NAVIGATE_EVENT: symbol;
+export declare const BEFORE_EVENT: symbol;
+export declare const POSTPONE_EVENT: symbol;
+export declare const REGISTER_EVENT: symbol;
+export declare const UNREGISTER_EVENT: symbol;
+export declare const ENDED_EVENT: symbol;
+export declare const FAILED_EVENT: symbol;
+export declare const IGNORED_EVENT: symbol;
+export declare const CANCELLED_EVENT: symbol;

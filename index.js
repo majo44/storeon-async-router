@@ -58,20 +58,15 @@ let handleId = 0;
  */
 let navId = 0;
 
-export const EVENTS = {
-    /**
-     * Action which you should dispatch when you want to start new navigation.
-     */
-    NAVIGATE: Symbol('NAVIGATE'),
-    BEFORE: Symbol('BEFORE_NAVIGATION'),
-    POSTPONE: Symbol('POSTPONE_NAVIGATION'),
-    REGISTER: Symbol('REGISTER_ROUTE'),
-    UNREGISTER: Symbol('UNREGISTER_ROUTE'),
-    ENDED: Symbol('NAVIGATION_ENDED'),
-    FAILED: Symbol('NAVIGATION_FAILED'),
-    IGNORED: Symbol('NAVIGATION_IGNORED'),
-    CANCELLED: Symbol('NAVIGATION_CANCELLED'),
-};
+const NAVIGATE_EVENT = Symbol('NAVIGATE');
+const BEFORE_EVENT = Symbol('BEFORE_NAVIGATION');
+const POSTPONE_EVENT = Symbol('POSTPONE_NAVIGATION');
+const REGISTER_EVENT = Symbol('REGISTER_ROUTE');
+const UNREGISTER_EVENT = Symbol('UNREGISTER_ROUTE');
+const ENDED_EVENT = Symbol('NAVIGATION_ENDED');
+const FAILED_EVENT = Symbol('NAVIGATION_FAILED');
+const IGNORED_EVENT = Symbol('NAVIGATION_IGNORED');
+const CANCELLED_EVENT = Symbol('NAVIGATION_CANCELLED');
 
 /**
  * Storeon router module. Use it during your store creation.
@@ -103,7 +98,7 @@ const asyncRoutingModule = (store) => {
      * Handling navigate action.
      */
     store.on(
-        EVENTS.NAVIGATE,
+        NAVIGATE_EVENT,
         /**
          * @param {StateWithRouting} state
          * @param {RoutingState} state.routing
@@ -116,11 +111,11 @@ const asyncRoutingModule = (store) => {
                 // if is for same url and not forced
                 if (routing.next.url === n.url && !n.force) {
                     // we will ignore this navigation request
-                    store.dispatch(EVENTS.IGNORED, n);
+                    store.dispatch(IGNORED_EVENT, n);
                     return null;
                 }
                 // dispatch cancellation
-                store.dispatch(EVENTS.CANCELLED, routing.next);
+                store.dispatch(CANCELLED_EVENT, routing.next);
             }
 
             // if the navigation is to same url as current
@@ -130,7 +125,7 @@ const asyncRoutingModule = (store) => {
                 && !n.force
             ) {
                 // we will ignore this navigation request
-                store.dispatch(EVENTS.IGNORED, n);
+                store.dispatch(IGNORED_EVENT, n);
                 return null;
             }
 
@@ -138,7 +133,7 @@ const asyncRoutingModule = (store) => {
             Promise.resolve().then(() => {
                 // dispatch before navigation event
                 if (store.get().routing.next === n) {
-                    store.dispatch(EVENTS.BEFORE, n);
+                    store.dispatch(BEFORE_EVENT, n);
                 }
             });
 
@@ -153,7 +148,7 @@ const asyncRoutingModule = (store) => {
     );
 
     store.on(
-        EVENTS.ENDED,
+        ENDED_EVENT,
         /**
          * @param {StateWithRouting} state
          * @param {RoutingState} state.routing
@@ -165,7 +160,7 @@ const asyncRoutingModule = (store) => {
     );
 
     store.on(
-        EVENTS.POSTPONE,
+        POSTPONE_EVENT,
         /**
          * @param {StateWithRouting} s
          * @return {StateWithRouting}
@@ -182,7 +177,7 @@ const asyncRoutingModule = (store) => {
     );
 
     store.on(
-        EVENTS.BEFORE,
+        BEFORE_EVENT,
         /**
          * @param {StateWithRouting} s
          * @param {RoutingState} s.routing
@@ -221,7 +216,7 @@ const asyncRoutingModule = (store) => {
                 // allows to cancellation
                 const ac = new AbortController();
                 const disconnect = store.on(
-                    EVENTS.CANCELLED,
+                    CANCELLED_EVENT,
                     /**
                      * @param {StateWithRouting} ls
                      * @param {Navigation} ln
@@ -244,36 +239,36 @@ const asyncRoutingModule = (store) => {
                     if (next && next.id === navigation.id) {
                         if (res && typeof res.then === 'function') {
                             // if handle is async, notify store that we have to postpone navigation
-                            store.dispatch(EVENTS.POSTPONE, navigation);
+                            store.dispatch(POSTPONE_EVENT, navigation);
                             // await for end of callback
                             await res;
                             if (!ac.signal.aborted) {
                                 // if was not cancelled, confirm end of navigation
-                                store.dispatch(EVENTS.ENDED, navigation);
+                                store.dispatch(ENDED_EVENT, navigation);
                             }
                         } else {
                             // for synchronous, confirm end of navigation
-                            store.dispatch(EVENTS.ENDED, navigation);
+                            store.dispatch(ENDED_EVENT, navigation);
                         }
                     }
                 } catch (error) {
                     if (error.name !== 'AbortError') {
                         // on any error
-                        store.dispatch(EVENTS.FAILED, { navigation, error });
+                        store.dispatch(FAILED_EVENT, { navigation, error });
                     }
                 }
                 // at the end disconnect cancellation
                 disconnect();
             } else {
                 // if there is no matched route
-                store.dispatch(EVENTS.FAILED,
+                store.dispatch(FAILED_EVENT,
                     { navigation: n, error: new Error(`No route handle for url: ${n.url}`) });
             }
         },
     );
 
     store.on(
-        EVENTS.REGISTER,
+        REGISTER_EVENT,
         /**
          * @param {StateWithRouting} s
          * @param {{id:number, route: string}} h
@@ -288,7 +283,7 @@ const asyncRoutingModule = (store) => {
     );
 
     store.on(
-        EVENTS.UNREGISTER,
+        UNREGISTER_EVENT,
         /**
          * @param {StateWithRouting} s
          * @param {{id:number, route: string}} h
@@ -301,9 +296,9 @@ const asyncRoutingModule = (store) => {
             },
         }),
     );
-    store.on(EVENTS.IGNORED, async () => {});
-    store.on(EVENTS.CANCELLED, ignoreNext);
-    store.on(EVENTS.FAILED, ignoreNext);
+    store.on(IGNORED_EVENT, async () => {});
+    store.on(CANCELLED_EVENT, ignoreNext);
+    store.on(FAILED_EVENT, ignoreNext);
 };
 
 /**
@@ -343,10 +338,10 @@ function onNavigate(store, route, callback) {
         id, callback, route, regexp: new RegExp(route),
     };
     const r = { id, route };
-    store.dispatch(EVENTS.REGISTER, r);
+    store.dispatch(REGISTER_EVENT, r);
     return () => {
         delete routes[id];
-        store.dispatch(EVENTS.UNREGISTER, r);
+        store.dispatch(UNREGISTER_EVENT, r);
     };
 }
 
@@ -392,12 +387,12 @@ function navigate(store, url, force, options) {
             return null;
         };
         const u = [
-            store.on(EVENTS.ENDED, resolver),
-            store.on(EVENTS.CANCELLED, resolver),
-            store.on(EVENTS.IGNORED, resolver),
-            store.on(EVENTS.FAILED, rejector)];
+            store.on(ENDED_EVENT, resolver),
+            store.on(CANCELLED_EVENT, resolver),
+            store.on(IGNORED_EVENT, resolver),
+            store.on(FAILED_EVENT, rejector)];
         const unregister = () => u.map(e => e());
-        store.dispatch(EVENTS.NAVIGATE, {
+        store.dispatch(NAVIGATE_EVENT, {
             url, options, force, id,
         });
     });
@@ -408,7 +403,7 @@ function navigate(store, url, force, options) {
  * @param {import('storeon').Store.<StateWithRouting>} store
  */
 function cancelNavigation(store) {
-    store.dispatch(EVENTS.CANCELLED, store.get().routing.next);
+    store.dispatch(CANCELLED_EVENT, store.get().routing.next);
 }
 
 export {
@@ -416,4 +411,13 @@ export {
     onNavigate,
     navigate,
     asyncRoutingModule,
+    NAVIGATE_EVENT,
+    BEFORE_EVENT,
+    POSTPONE_EVENT,
+    REGISTER_EVENT,
+    UNREGISTER_EVENT,
+    ENDED_EVENT,
+    FAILED_EVENT,
+    IGNORED_EVENT,
+    CANCELLED_EVENT,
 };

@@ -9,7 +9,7 @@
      
 Asynchronous router for [Storeon](https://github.com/storeon/storeon).    
 
-It size is 976 bytes (minified and gzipped) and uses [Size Limit](https://github.com/ai/size-limit) to control size.
+It size is less then 1kB (minified and gzipped) and uses [Size Limit](https://github.com/ai/size-limit) to control size.
 
 ### Overview
 The key features are:
@@ -244,7 +244,7 @@ window.addEventListener("popstate", () => {
 });
 
 // connecting store changes to browser history
-store.on(EVENTS.ENDED, async (state, navigation) => {
+store.on(ENDED_EVENT, async (state, navigation) => {
   // ignore url's from popstate
   if (getLocationFullUrl() !== navigation.url) {
     navigation.options && navigation.options.replace

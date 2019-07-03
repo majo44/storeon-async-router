@@ -1,6 +1,6 @@
 {
   "name": "storeon-async-router",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Asynchronous router for [Storeon]",
   "repository": {
     "type": "git",
@@ -94,7 +94,7 @@
     "sourceMap": true,
     "instrument": true
   },
-  "husky" : {
+  "husky": {
     "hooks": {
       "pre-commit": "npm run build"
     }
