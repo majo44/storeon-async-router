@@ -9,7 +9,7 @@
      
 Asynchronous router for [Storeon](https://github.com/storeon/storeon).    
 
-It size is less then 1kB (minified and gzipped) and uses [Size Limit](https://github.com/ai/size-limit) to control size.
+It size is ~1kB (minified and gzipped) and uses [Size Limit](https://github.com/ai/size-limit) to control size.
 
 ### Overview
 The key features are:

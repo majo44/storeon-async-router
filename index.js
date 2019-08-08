@@ -58,32 +58,79 @@ let handleId = 0;
  */
 let navId = 0;
 
+/**
+ * Event dispatched to start navigation.
+ */
 const NAVIGATE_EVENT = Symbol('NAVIGATE');
+/**
+ * Event dispatched immediately when navigation starts.
+ */
 const BEFORE_EVENT = Symbol('BEFORE_NAVIGATION');
+/**
+ * Event dispatched when navigation is postponed what means
+ * that there was async handler attached to route.
+ */
 const POSTPONE_EVENT = Symbol('POSTPONE_NAVIGATION');
+/**
+ * Event dispatched when handler is registered to route.
+ */
 const REGISTER_EVENT = Symbol('REGISTER_ROUTE');
+/**
+ * Event dispatched when handler is unregistered.
+ */
 const UNREGISTER_EVENT = Symbol('UNREGISTER_ROUTE');
+/**
+ * Event dispatched when navigation is ended successfully.
+ */
 const ENDED_EVENT = Symbol('NAVIGATION_ENDED');
+/**
+ * Event dispatched when navigation is failed.
+ */
 const FAILED_EVENT = Symbol('NAVIGATION_FAILED');
+/**
+ * Event dispatched when navigation is ignored.
+ */
 const IGNORED_EVENT = Symbol('NAVIGATION_IGNORED');
+/**
+ * Event dispatched when navigation is cancelled.
+ */
 const CANCELLED_EVENT = Symbol('NAVIGATION_CANCELLED');
 
 /**
+ * @typedef {{
+ *   [NAVIGATE_EVENT]: Navigation,
+ *   [BEFORE_EVENT]: Navigation,
+ *   [POSTPONE_EVENT]: NavigationState,
+ *   [REGISTER_EVENT]: {id:number, route: string},
+ *   [UNREGISTER_EVENT]: {id:number, route: string},
+ *   [ENDED_EVENT]: NavigationState,
+ *   [FAILED_EVENT]: { navigation: Navigation, error: any },
+ *   [IGNORED_EVENT]: Navigation,
+ *   [CANCELLED_EVENT]: Navigation
+ * }} AsyncRoutingEvents
+ */
+
+/**
  * Storeon router module. Use it during your store creation.
- *
- * @param {import('storeon').Store<StateWithRouting>} store store instace
  *
  * @example
  * import createStore from 'storeon';
  * import { asyncRoutingModule } from 'storeon-async-router;
  * const store = createStore([asyncRoutingModule, your_module1 ...]);
+ *
+ * @param {import('storeon').Store<StateWithRouting,
+ *  AsyncRoutingEvents & import('storeon').StoreonEvents<*>>}
+ *      store store instance
  */
 const asyncRoutingModule = (store) => {
     /**
      * @param {object} state
      * @param {RoutingState} state.routing
      */
-    const ignoreNext = ({ routing }) => ({ routing: { ...routing, next: undefined } });
+    const ignoreNext = ({ routing }) => {
+        const { next, ...withoutNext } = routing;
+        return { routing: withoutNext };
+    };
 
     /**
      * Set default state on initialization.
@@ -162,14 +209,15 @@ const asyncRoutingModule = (store) => {
     store.on(
         POSTPONE_EVENT,
         /**
-         * @param {StateWithRouting} s
+         * @param {StateWithRouting} state
+         * @param {RoutingState} state.routing
          * @return {StateWithRouting}
          */
-        s => /** @type {*} */({
+        ({ routing }) => /** @type {*} */({
             routing: {
-                ...s.routing,
+                ...routing,
                 next: {
-                    ...s.routing.next,
+                    ...routing.next,
                     async: true,
                 },
             },
@@ -181,7 +229,7 @@ const asyncRoutingModule = (store) => {
         /**
          * @param {StateWithRouting} s
          * @param {RoutingState} s.routing
-         * @param {NavigationState} n
+         * @param {Navigation} n
          */
         async (s, n) => {
             /**
@@ -192,7 +240,7 @@ const asyncRoutingModule = (store) => {
              * @type {string}
              */
             let route = '';
-            // loohing for handle which related route matched requested url
+            // looking for handle which related route matched requested url
             const handle = s.routing.handles.find(({ id }) => {
                 match = n.url.match(routes[id].regexp);
                 ({ route } = routes[id]);
@@ -364,34 +412,26 @@ function navigate(store, url, force, options) {
          * @param {Navigation} n
          * @return {null}
          */
-        const resolver = (s, n) => {
+        const r = (s, n) => {
             if (n.id === id) {
-                unregister(); // eslint-disable-line no-use-before-define
+                un(); // eslint-disable-line no-use-before-define
                 res();
             }
             return null;
         };
-        /**
-         * @param {StateWithRouting} s
-         * @param {object} data
-         * @param {Error} data.error
-         * @param {Navigation} data.navigation
-         * @return {null}
-         */
-        const rejector = (s, { error, navigation }) => {
-            /* istanbul ignore else */
-            if (navigation.id === id) {
-                unregister(); // eslint-disable-line no-use-before-define
-                rej(error);
-            }
-            return null;
-        };
         const u = [
-            store.on(ENDED_EVENT, resolver),
-            store.on(CANCELLED_EVENT, resolver),
-            store.on(IGNORED_EVENT, resolver),
-            store.on(FAILED_EVENT, rejector)];
-        const unregister = () => u.map(e => e());
+            store.on(ENDED_EVENT, r),
+            store.on(CANCELLED_EVENT, r),
+            store.on(IGNORED_EVENT, r),
+            store.on(FAILED_EVENT, (s, { error, navigation }) => {
+                /* istanbul ignore else */
+                if (navigation.id === id) {
+                    un(); // eslint-disable-line no-use-before-define
+                    rej(error);
+                }
+                return null;
+            })];
+        const un = () => u.map(e => e());
         store.dispatch(NAVIGATE_EVENT, {
             url, options, force, id,
         });
