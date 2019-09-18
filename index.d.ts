@@ -71,10 +71,10 @@ export interface RoutingState {
  * Callback for route navigation handling.
  */
 export type RouteCallback =
-    /**
-     * @param navigation handled navigation
-     * @param abortSignal the signal which can be used for abort navigation
-     */
+/**
+ * @param navigation handled navigation
+ * @param abortSignal the signal which can be used for abort navigation
+ */
     (navigation: NavigationState, abortSignal: AbortSignal) => (void | Promise<any>);
 
 /**
@@ -97,7 +97,7 @@ export interface StateWithRouting {
  * ```
  */
 export declare const asyncRoutingModule: <S extends StateWithRouting>(
-    store: Store<S, AsyncRoutingEvents<S>>) => void;
+    store: Store<S, AsyncRoutingEvents>) => void;
 
 /**
  * Register the route handler to top of stack of handles.
@@ -151,48 +151,48 @@ export declare function cancelNavigation<S extends StateWithRouting, E extends (
 /**
  * Event dispatched to start navigation.
  */
-export const NAVIGATE_EVENT = Symbol('NAVIGATE');
+export declare const NAVIGATE_EVENT: unique symbol;
 
 /**
  * Event dispatched immediately when navigation starts.
  */
-export const BEFORE_EVENT = Symbol('BEFORE_NAVIGATION');
+export declare const BEFORE_EVENT: unique symbol;
 
 /**
  * Event dispatched when navigation is postponed what means
  * that there was async handler attached to route.
  */
-export const POSTPONE_EVENT = Symbol('POSTPONE_NAVIGATION');
+export declare const POSTPONE_EVENT: unique symbol;
 
 /**
  * Event dispatched when handler is registered to route.
  */
-export const REGISTER_EVENT = Symbol('REGISTER_ROUTE');
+export declare const REGISTER_EVENT: unique symbol;
 
 /**
  * Event dispatched when handler is unregistered.
  */
-export const UNREGISTER_EVENT = Symbol('UNREGISTER_ROUTE');
+export declare const UNREGISTER_EVENT: unique symbol;
 
 /**
  * Event dispatched when navigation is ended successfully.
  */
-export const ENDED_EVENT = Symbol('NAVIGATION_ENDED');
+export declare const ENDED_EVENT: unique symbol;
 
 /**
  * Event dispatched when navigation is failed.
  */
-export const FAILED_EVENT = Symbol('NAVIGATION_FAILED');
+export declare const FAILED_EVENT: unique symbol;
 
 /**
  * Event dispatched when navigation is ignored.
  */
-export const IGNORED_EVENT = Symbol('NAVIGATION_IGNORED');
+export declare const IGNORED_EVENT: unique symbol;
 
 /**
  * Event dispatched when navigation is cancelled.
  */
-export const CANCELLED_EVENT = Symbol('NAVIGATION_CANCELLED');
+export declare const CANCELLED_EVENT: unique symbol;
 
 /**
  * Types of events supported by asyncRoutingEvents

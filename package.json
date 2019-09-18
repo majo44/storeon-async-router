@@ -1,6 +1,6 @@
 {
   "name": "storeon-async-router",
-  "version": "0.3.0-dev.2",
+  "version": "0.3.1",
   "description": "Asynchronous router for [Storeon]",
   "repository": {
     "type": "git",
@@ -54,9 +54,9 @@
     "source-map-support": "^0.5.12",
     "storeon": "^0.9.3",
     "ts-node": "^8.2.0",
-    "tslib": "^1.9.3",
+    "tslib": "^1.10.0",
     "typedoc": "^0.14.2",
-    "typescript": "^3.5.3"
+    "typescript": "^3.6.3"
   },
   "scripts": {
     "size": "size-limit",
