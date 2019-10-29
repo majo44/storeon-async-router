@@ -1,5 +1,7 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
+## 0.3.2
+* Fixed typescript declaration, allows lest strict state to be provided to operation functions
 ## 0.3.1
 * Fixed typescript declaration, updated dependencies to latest typescript
 ## 0.1.2

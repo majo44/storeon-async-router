@@ -116,8 +116,8 @@ export declare const asyncRoutingModule: <S extends StateWithRouting>(
  * onNavigate(store, '/abc', (navigation) => console.log(`Hello on url ${navigation.url}`);
  * ```
  */
-export declare function onNavigate<S extends StateWithRouting, E extends (AsyncRoutingEvents & StoreonEvents<S>)>(
-    store: Store<S, E>, route: string, callback: RouteCallback): () => void
+export declare function onNavigate<E extends AsyncRoutingEvents>(
+    store: Store<any, E>, route: string, callback: RouteCallback): () => void
 
 /**
  * Navigate to provided route.
@@ -138,15 +138,15 @@ export declare function onNavigate<S extends StateWithRouting, E extends (AsyncR
  * navigate(store, '/abc');
  * ```
  */
-export declare function navigate<S extends StateWithRouting, E extends (AsyncRoutingEvents & StoreonEvents<S>)>(
-    store: Store<S, E>, url: string, force?: boolean, options?: any): Promise<void>;
+export declare function navigate<E extends AsyncRoutingEvents>(
+    store: Store<any, E>, url: string, force?: boolean, options?: any): Promise<void>;
 
 /**
  * Cancel current navigation.
  * @param store on store
  */
-export declare function cancelNavigation<S extends StateWithRouting, E extends (AsyncRoutingEvents & StoreonEvents<S>)>(
-    store: Store<S, E>): void;
+export declare function cancelNavigation<E extends AsyncRoutingEvents>(
+    store: Store<any, E>): void;
 
 /**
  * Event dispatched to start navigation.
