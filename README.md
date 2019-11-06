@@ -90,7 +90,9 @@ priority, so if at the end you will register multiple handle for same route,
 only the last registered one will be used. `onNavigate` is returns function which can be used for 
 unregister the handle. Params:
    - `store` instance of store
-   - `route` the route regexp string, for modern browsers you can use regexp group namings
+   - `route` the route path regexp string, please notice that only path is matched and can contains the rote params,
+   If you want to read search params you have to do that in callback by parsing `url` string delivered there in 
+   `navigation` object. On modern browsers you can use regexp group namings for path params.
    - `callback` the callback which will be called when provided route will be matched with requested url. 
    `callback` can returns undefined or promise. In case of promise, route will be not applied (navigation will be not 
    ended) until the promise will be not resolve. Callback is called with two parameters:
@@ -101,12 +103,14 @@ unregister the handle. Params:
 - `navigate(store, url, [force], [options])` - function which triggers navigation to particular url. Params:
    - `store` instance of store
    - `url` requested url string 
-   - `force` force navigation, if there is a registered route which will match the requested url, even for same url 
-   as current the route callback will be called
+   - `force` optional force navigation, if there is a registered route which will match the requested url, even for same url 
+   as current the route callback will be called 
+   - `options` optional additional navigation options which will be delivered to route callback
+   for browser url navigation it can be eg. replace - for replacing url in the url bar, ect.
 - `cancelNavigation(store)` - function which cancel current navigation (if there is any in progress). Params:
    - `store` instance of store
 - `Navigation` object contains
-    - `url` requested url
+    - `url` requested url string
     - `id` unique identifier of navigation
     - `options` additional options for navigation, for browser url navigation it can be
     eg. replace - for replacing url in the url bar, ect..

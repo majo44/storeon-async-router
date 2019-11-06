@@ -1,5 +1,8 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
+## 0.3.3
+* Bump dev dependencies because of security reasons
+* Updated documentation
 ## 0.3.2
 * Fixed typescript declaration, allows lest strict state to be provided to operation functions
 ## 0.3.1
