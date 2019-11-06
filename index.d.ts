@@ -1,4 +1,4 @@
-import { Store, StoreonEvents } from 'storeon';
+import { Store } from 'storeon';
 
 /**
  * Ongoing navigation object.
