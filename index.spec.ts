@@ -15,10 +15,8 @@ import * as nodeFetch from 'node-fetch';
 (global as any).fetch = nodeFetch;
 import 'abortcontroller-polyfill/dist/polyfill-patch-fetch';
 
-
 use(sinonChai);
 use(chaiAsPromised);
-
 
 describe(`simple scenarions`, () => {
 

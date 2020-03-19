@@ -37,12 +37,11 @@ also polyfilles for promise (on IE) and fetch (Node and IE).
 ### Usage
  
 ```javascript
-import createStore from "storeon";
-import storeonDevTool from "storeon/devtools/index";
-import { asyncRoutingModule, onNavigate, navigate } from "storeon-async-router";
+import { createStoreon } from "storeon";
+import { routingModule, onNavigate, navigate } from "storeon-async-router";
 
 // create store with adding route module
-const store = createStore([asyncRoutingModule, storeonDevTool]);
+const store = createStoreon([routingModule]);
 
 // handle data flow events
 store.on("dataLoaded", (state, data) => ({ data }));
@@ -79,7 +78,7 @@ try to fast click with http throttling, to see the navigation cancellation.
 
 
 ### Api
-- `asyncRoutingModule` - is storeon module which contains the whole logic of routing
+- `routingModule` - is storeon module which contains the whole logic of routing
    - this module contains reducer for the `routing` state property which contains:
       - `current` current applied `Navigation`
       - `next` ongoing `Navigation` (if there is any)
