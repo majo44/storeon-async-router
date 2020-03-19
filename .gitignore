@@ -1,7 +1,10 @@
-*.iml
 .idea
-node_modules
 .nyc_output
 coverage
 docs
-umd
+module
+node_modules
+index.js
+index.js.map
+index.d.ts
+*.iml

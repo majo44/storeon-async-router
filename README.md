@@ -248,7 +248,7 @@ window.addEventListener("popstate", () => {
 });
 
 // connecting store changes to browser history
-store.on(ENDED_EVENT, async (state, navigation) => {
+store.on(NAVIGATE_ENDED_EVENT, async (state, navigation) => {
   // ignore url's from popstate
   if (getLocationFullUrl() !== navigation.url) {
     navigation.options && navigation.options.replace
