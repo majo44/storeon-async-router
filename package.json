@@ -1,6 +1,6 @@
 {
   "name": "storeon-async-router",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Asynchronous router for [Storeon]",
   "repository": {
     "type": "git",
@@ -15,7 +15,7 @@
     "hook"
   ],
   "module": "./module/index.js",
-  "main": "index.ts",
+  "main": "index.js",
   "types": "./index.d.ts",
   "author": {
     "email": "majo44@gmail.com",
