@@ -1,20 +1,17 @@
 {
   "compilerOptions": {
-    "module": "esnext",
-    "target": "es5",
+    "module": "commonjs",
+    "target": "es6",
     "moduleResolution": "node",
+    "declaration": true,
     "sourceMap": true,
     "strict": true,
-    "allowJs": true,
-    "checkJs": true,
-    "skipLibCheck": true,
-    "lib": ["dom", "es7"],
-    "noEmitHelpers": true,
-    "importHelpers": true,
-    "noEmit": true,
     "strictNullChecks": false
   },
-  "files": [
-    "index.js"
+  "exclude": [
+    "node_modules",
+    "module",
+    "docs",
+    "**/*.spec.ts"
   ]
 }

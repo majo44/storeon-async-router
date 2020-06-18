@@ -1,13 +1,42 @@
-import * as createStore from 'storeon';
-import * as logger from 'storeon/devtools/logger';
+import { createStoreon, StoreonStore } from 'storeon';
+import {
+    onNavigate,
+    routingModule,
+    navigate,
+    cancelNavigation,
+    StateWithRouting, RoutingEvents
+} from './index';
+import * as sinon from 'sinon';
+import { expect, use } from 'chai';
+import * as sinonChai from "sinon-chai";
+import * as chaiAsPromised from "chai-as-promised";
+import * as nodeFetch from 'node-fetch';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(global as any).fetch = nodeFetch;
+import 'abortcontroller-polyfill/dist/polyfill-patch-fetch';
 
-import { onNavigate, asyncRoutingModule, navigate, cancelNavigation } from '../index.js';
+use(sinonChai);
+use(chaiAsPromised);
 
 describe(`simple scenarions`, () => {
 
-    let store;
+    let store: StoreonStore<StateWithRouting, RoutingEvents>;
+
     beforeEach(() => {
-        store = createStore([asyncRoutingModule ]);
+        store = createStoreon([routingModule,
+            // (store) => {
+            //     store.on('@dispatch', (s, e) => {
+            //         if (e[0] !== '@changed') {
+            //             console.log('event', e[0], (e[1] as any)?.navigation?.id, (e[1] as any)?.navigation?.url, (e[1] as any)?.type)
+            //         }
+            //     });
+            //     store.on('@changed', (s) => {
+            //         console.log('state',
+            //             `current: ${s.routing?.current?.id}/${s.routing?.current?.url}`,
+            //             `next: ${s.routing?.next?.id}/${s.routing?.next?.url}`)
+            //     })
+            // }
+        ]);
     });
 
     it(`Router should call handle for proper registered route`, async () => {
@@ -99,6 +128,7 @@ describe(`simple scenarions`, () => {
     });
 
     it('Router should allows to cancel sync navigation', async () => {
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
         onNavigate(store, '/a', () => {});
         onNavigate(store, '/b', () => {
             cancelNavigation(store);
@@ -112,7 +142,8 @@ describe(`simple scenarions`, () => {
     });
 
     it('Router should allows to cancel async navigation', async () => {
-        let continueA;
+        let continueA: () => void;
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
         onNavigate(store, '/a', () => {});
         onNavigate(store, '/b', () => {
             return new Promise(res => continueA = res)
@@ -120,7 +151,7 @@ describe(`simple scenarions`, () => {
 
         await navigate(store, '/a');
 
-        let promise = navigate(store, '/b');
+        const promise = navigate(store, '/b');
         setTimeout(() => {
             cancelNavigation(store);
             continueA();
@@ -132,6 +163,7 @@ describe(`simple scenarions`, () => {
     });
 
     it('Router should allows for redirection', async () => {
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
         onNavigate(store, '/a', () => {});
         onNavigate(store, '/b', () => {
             return navigate(store, '/a');
@@ -140,11 +172,11 @@ describe(`simple scenarions`, () => {
         expect(store.get().routing.current.url).eq('/a');
         expect(store.get().routing.current.route).eq('/a');
     });
-    
+
     it('Router should ignore AbortError', async () => {
         const spy = sinon.fake();
-        let continueSemaphore;
-        let semaphore = new Promise(res => continueSemaphore = res);
+        let continueSemaphore: () => void;
+        const semaphore = new Promise(res => continueSemaphore = res);
         onNavigate(store, '/a', async (navigation, signal) => {
             continueSemaphore();
             await fetch('http://slowwly.robertomurray.co.uk/delay/3000/url/http://www.google.co.uk', {signal});
@@ -155,5 +187,12 @@ describe(`simple scenarions`, () => {
         cancelNavigation(store);
         expect(spy).not.called;
     });
+
+    it('Should provide proper parameter values', async () => {
+        const spy = sinon.fake();
+        onNavigate(store, '/a/(?<page>.*)', spy);
+        await navigate(store, '/a/test');
+        expect(store.get().routing.current.params).eql({page: 'test', 0: 'test'});
+    })
 
 });

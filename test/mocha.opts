@@ -1,4 +1,0 @@
---require test/setup.js
---full-trace
---bail
-test/specs.js
