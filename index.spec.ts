@@ -4,7 +4,7 @@ import {
     routingModule,
     navigate,
     cancelNavigation,
-    StateWithRouting, RoutingEvents
+    StateWithRouting, RoutingEvents, PRE_NAVIGATE_EVENT
 } from './index';
 import * as sinon from 'sinon';
 import { expect, use } from 'chai';
@@ -141,6 +141,24 @@ describe(`simple scenarions`, () => {
 
     });
 
+    it('Router should allow to cancel navigation in PRE_NAVIGATE_EVENT', async () => {
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
+        onNavigate(store, '/a', () => {});
+        onNavigate(store, '/b', () => {});
+
+        store.on(PRE_NAVIGATE_EVENT,(_, {navigation}) => {
+            if(navigation.url === '/b') {
+                cancelNavigation(store);
+            }
+        })
+
+        await navigate(store, '/a');
+        await navigate(store, '/b');
+
+        expect(store.get().routing.current.url).eq('/a');
+        expect(store.get().routing.current.route).eq('/a');
+    });
+
     it('Router should allows to cancel async navigation', async () => {
         let continueA: () => void;
         // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -193,6 +211,6 @@ describe(`simple scenarions`, () => {
         onNavigate(store, '/a/(?<page>.*)', spy);
         await navigate(store, '/a/test');
         expect(store.get().routing.current.params).eql({page: 'test', 0: 'test'});
-    })
+    });
 
 });
