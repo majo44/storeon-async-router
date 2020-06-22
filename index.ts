@@ -136,7 +136,7 @@ export interface RoutingEvents {
     [NAVIGATE_EVENT]: NavigationEvent;
     [NAVIGATION_ENDED_EVENT]: {navigation: NavigationState};
     [NAVIGATION_FAILED_EVENT]: {navigation: Navigation; error: any };
-    [NAVIGATION_CANCELLED_EVENT]: NavigationEvent;
+    [NAVIGATION_CANCELLED_EVENT]: undefined;
     [NAVIGATION_IGNORED_EVENT]: NavigationEvent;
     [POST_NAVIGATE_EVENT]: {navigation: Navigation; error?: any };
     [CANCEL_EVENT]: undefined;
@@ -157,7 +157,7 @@ const ignoreNavigation = (navigation: Navigation, {current, next}: StateWithRout
  * const store = createStore([asyncRoutingModule, your_module1 ...]);
  */
 export const routingModule = (store: StoreonStore<StateWithRouting, RoutingEvents>) => {
-    
+
     const dispatch = store.dispatch.bind(store);
     const on = store.on.bind(store);
 
@@ -199,7 +199,7 @@ export const routingModule = (store: StoreonStore<StateWithRouting, RoutingEvent
     // we have to cancel them
     on(NAVIGATE_EVENT, ({ routing }) => {
         if (routing.next) {
-            dispatch(NAVIGATION_CANCELLED_EVENT, {navigation: routing.next})
+            dispatch(NAVIGATION_CANCELLED_EVENT)
         }
     });
 
@@ -271,10 +271,10 @@ export const routingModule = (store: StoreonStore<StateWithRouting, RoutingEvent
     );
 
     // state updates
-    on(NAVIGATION_CANCELLED_EVENT, ({ routing }) => ({routing : { ...routing, next: undefined }}));
-    on(NAVIGATION_FAILED_EVENT, ({ routing }) => ({routing : { ...routing, next: undefined }}));
+    on(NAVIGATION_CANCELLED_EVENT, ({ routing }) => ({routing : { ...routing, candidate: undefined, next: undefined }}));
+    on(NAVIGATION_FAILED_EVENT, ({ routing }) => ({routing : { ...routing, candidate: undefined, next: undefined }}));
     on(NAVIGATION_ENDED_EVENT, ({ routing }, {navigation}) =>
-        ({routing : { ...routing, next: undefined, current: navigation }}));
+        ({routing : { ...routing, candidate: undefined, next: undefined, current: navigation }}));
 
     // binding events to close promise
     on(NAVIGATION_IGNORED_EVENT, (s, e) => dispatch(POST_NAVIGATE_EVENT, e));
@@ -289,8 +289,8 @@ export const routingModule = (store: StoreonStore<StateWithRouting, RoutingEvent
     // public
     on(CANCEL_EVENT, ({routing}) => {
         /* istanbul ignore else */
-        if (routing.next) {
-            dispatch(NAVIGATION_CANCELLED_EVENT, {navigation: routing.next })
+        if (routing.next || routing.candidate) {
+            dispatch(NAVIGATION_CANCELLED_EVENT)
         }
     });
 };
