@@ -1,6 +1,6 @@
 {
   "name": "storeon-async-router",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Asynchronous router for [Storeon]",
   "repository": {
     "type": "git",
