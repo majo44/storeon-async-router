@@ -343,11 +343,15 @@ export const navigate = (
     url: string,
     force?: boolean,
     options?: any): Promise<void> => {
-    const id = navId++;
+    const currentId = store.get().routing?.current?.id;    
+    const id = ++navId;
+
     return new Promise((res, rej) => {
         const u = store.on(POST_NAVIGATE_EVENT, (s, { navigation, error }) => {
             if (id === navigation.id) {
-                u();
+                if (currentId !==  s.routing?.current?.id) {
+                    u();
+                }
                 error ? rej(error) : res();
             }
         });

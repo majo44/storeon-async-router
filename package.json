@@ -73,11 +73,11 @@
   },
   "size-limit": [
     {
-      "limit": "1200 B",
+      "limit": "1260 B",
       "path": "index.js"
     },
     {
-      "limit": "1200 B",
+      "limit": "1260 B",
       "path": "module/index.js"
     }
   ],
