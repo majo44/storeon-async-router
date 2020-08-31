@@ -4,7 +4,7 @@ import {
     routingModule,
     navigate,
     cancelNavigation,
-    StateWithRouting, RoutingEvents, PRE_NAVIGATE_EVENT
+    StateWithRouting, RoutingEvents, PRE_NAVIGATE_EVENT, NAVIGATION_IGNORED_EVENT
 } from './index';
 import * as sinon from 'sinon';
 import { expect, use } from 'chai';
@@ -212,5 +212,22 @@ describe(`simple scenarions`, () => {
         await navigate(store, '/a/test');
         expect(store.get().routing.current.params).eql({page: 'test', 0: 'test'});
     });
+
+    it('regression - when ignore navigation ignore event should be dispatched once', async () => {
+        const spy = sinon.fake();
+        let count = 0;
+        store.on('@dispatch', (s, e) => {
+            if (e[0] === NAVIGATION_IGNORED_EVENT) {
+                count ++;
+            }
+        });
+        onNavigate(store, '/a', spy);
+        await navigate(store, '/a');
+        expect(spy).to.be.calledOnce;
+        await navigate(store, '/a');
+        expect(spy).to.be.calledOnce;
+        await new Promise((res) => setTimeout(res));
+        expect(count).to.eq(1);
+    })
 
 });

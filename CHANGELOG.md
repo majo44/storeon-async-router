@@ -1,5 +1,7 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
+## 1.1.1
+* Bugfix for double ignore event dispatch on same route navigation.
 ## 1.0.1
 * Fix packaging.
 ## 1.0.0

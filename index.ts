@@ -174,25 +174,20 @@ export const routingModule = (store: StoreonStore<StateWithRouting, RoutingEvent
             return;
         }
 
-        return {
-            routing: {
-                ...routing,
-                candidate: navigation,
-            },
-        };
-    });
-
-    // waits for sync navigation requests
-    // ignore all outdated candidates
-    // go forward just by valid one
-    on(PRE_NAVIGATE_EVENT, (_, { navigation }) => {
         setTimeout(() => {
             if (store.get().routing.candidate?.id === navigation.id) {
                 dispatch(NAVIGATE_EVENT, { navigation })
             } else {
                 dispatch(NAVIGATION_IGNORED_EVENT, {navigation});
             }
-        })
+        });
+
+        return {
+            routing: {
+                ...routing,
+                candidate: navigation,
+            },
+        };
     });
 
     // if we have something ongoing
