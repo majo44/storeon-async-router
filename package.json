@@ -1,6 +1,6 @@
 {
   "name": "storeon-async-router",
-  "version": "1.1.1",
+  "version": "2.0.0",
   "description": "Asynchronous router for [Storeon]",
   "repository": {
     "type": "git",
@@ -29,7 +29,7 @@
   ],
   "license": "MIT",
   "peerDependencies": {
-    "storeon": "^2.0.1"
+    "storeon": "^3.1.5"
   },
   "devDependencies": {
     "@size-limit/preset-small-lib": "^4.4.0",
@@ -55,7 +55,7 @@
     "sinon-chai": "^3.5.0",
     "size-limit": "^4.4.0",
     "source-map-support": "^0.5.16",
-    "storeon": "^2.0.1",
+    "storeon": "^3.1.5",
     "ts-node": "^8.6.2",
     "tslib": "^1.11.1",
     "typedoc": "^0.17.1",
